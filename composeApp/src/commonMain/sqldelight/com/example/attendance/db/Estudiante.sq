@@ -1,0 +1,22 @@
+CREATE TABLE estudiante (
+    carnet_identidad INTEGER NOT NULL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    apellido TEXT NOT NULL
+);
+
+insertEstudiante:
+INSERT INTO estudiante(carnet_identidad, nombre, apellido)
+VALUES (?, ?, ?);
+
+getEstudiante:
+SELECT * FROM estudiante WHERE carnet_identidad = ?;
+
+getAllEstudiantes:
+SELECT * FROM estudiante;
+
+updateEstudiante:
+UPDATE estudiante SET nombre = ?, apellido = ?
+WHERE carnet_identidad = ?;
+
+deleteEstudiante:
+DELETE FROM estudiante WHERE carnet_identidad = ?;

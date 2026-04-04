@@ -1,0 +1,32 @@
+CREATE TABLE detalle_asistencia (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    asistencia_id INTEGER NOT NULL,
+    estudiante_id INTEGER NOT NULL,
+    estado TEXT NOT NULL DEFAULT 'FALTA',
+    FOREIGN KEY (asistencia_id) REFERENCES asistencia(id),
+    FOREIGN KEY (estudiante_id) REFERENCES estudiante(carnet_identidad)
+);
+
+insertDetalle:
+INSERT INTO detalle_asistencia(asistencia_id, estudiante_id, estado)
+VALUES (?, ?, ?);
+
+getDetalleById:
+SELECT * FROM detalle_asistencia WHERE id = ?;
+
+getDetalleByAsistencia:
+SELECT da.id, da.asistencia_id, da.estudiante_id, da.estado,
+       e.nombre, e.apellido
+FROM detalle_asistencia da
+INNER JOIN estudiante e ON da.estudiante_id = e.carnet_identidad
+WHERE da.asistencia_id = ?;
+
+updateEstado:
+UPDATE detalle_asistencia SET estado = ?
+WHERE asistencia_id = ? AND estudiante_id = ?;
+
+deleteDetalle:
+DELETE FROM detalle_asistencia WHERE id = ?;
+
+deleteDetalleByAsistencia:
+DELETE FROM detalle_asistencia WHERE asistencia_id = ?;

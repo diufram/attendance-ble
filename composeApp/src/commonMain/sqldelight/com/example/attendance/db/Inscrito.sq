@@ -1,0 +1,35 @@
+CREATE TABLE inscrito (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    materia_id INTEGER NOT NULL,
+    estudiante_id INTEGER NOT NULL,
+    FOREIGN KEY (materia_id) REFERENCES materia(id),
+    FOREIGN KEY (estudiante_id) REFERENCES estudiante(carnet_identidad)
+);
+
+insertInscrito:
+INSERT INTO inscrito(materia_id, estudiante_id)
+VALUES (?, ?);
+
+getInscritoById:
+SELECT * FROM inscrito WHERE id = ?;
+
+getAllInscritos:
+SELECT * FROM inscrito;
+
+getAlumnosByMateria:
+SELECT e.carnet_identidad, e.nombre, e.apellido
+FROM estudiante e
+INNER JOIN inscrito i ON e.carnet_identidad = i.estudiante_id
+WHERE i.materia_id = ?;
+
+getMateriasByEstudiante:
+SELECT m.id, m.sigla, m.nombre, m.grupo, m.docente_id
+FROM materia m
+INNER JOIN inscrito i ON m.id = i.materia_id
+WHERE i.estudiante_id = ?;
+
+deleteInscrito:
+DELETE FROM inscrito WHERE id = ?;
+
+deleteInscritoByMateriaEstudiante:
+DELETE FROM inscrito WHERE materia_id = ? AND estudiante_id = ?;

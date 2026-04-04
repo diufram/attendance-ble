@@ -1,0 +1,31 @@
+CREATE TABLE materia (
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    sigla TEXT NOT NULL,
+    nombre TEXT NOT NULL,
+    grupo TEXT NOT NULL,
+    docente_id INTEGER NOT NULL,
+    FOREIGN KEY (docente_id) REFERENCES docente(carnet_identidad)
+);
+
+insertMateria:
+INSERT INTO materia(sigla, nombre, grupo, docente_id)
+VALUES (?, ?, ?, ?);
+
+getMateriaById:
+SELECT * FROM materia WHERE id = ?;
+
+getAllMaterias:
+SELECT * FROM materia;
+
+getMateriasByDocente:
+SELECT * FROM materia WHERE docente_id = ?;
+
+getMateriaBySiglaGrupo:
+SELECT * FROM materia WHERE sigla = ? AND grupo = ?;
+
+updateMateria:
+UPDATE materia SET sigla = ?, nombre = ?, grupo = ?
+WHERE id = ?;
+
+deleteMateria:
+DELETE FROM materia WHERE id = ?;

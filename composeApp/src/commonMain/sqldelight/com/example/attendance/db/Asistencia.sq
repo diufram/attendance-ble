@@ -1,0 +1,29 @@
+CREATE TABLE asistencia (
+     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+     materia_id INTEGER NOT NULL,
+     fecha TEXT NOT NULL,
+     FOREIGN KEY (materia_id) REFERENCES materia(id)
+ );
+
+ insertAsistencia:
+ INSERT INTO asistencia(materia_id, fecha)
+ VALUES (?, ?);
+
+ getLastInsertId:
+ SELECT last_insert_rowid();
+
+ getAsistenciaById:
+ SELECT * FROM asistencia WHERE id = ?;
+
+ getAllAsistencias:
+ SELECT * FROM asistencia;
+
+ getAsistenciasByMateria:
+ SELECT * FROM asistencia WHERE materia_id = ?;
+
+ updateAsistencia:
+ UPDATE asistencia SET fecha = ?
+ WHERE id = ?;
+
+ deleteAsistencia:
+ DELETE FROM asistencia WHERE id = ?;
