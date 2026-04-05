@@ -5,8 +5,9 @@ import com.example.attendance.db.AttendanceDatabase
 data class DetalleAsistencia(
     val id: Long = 0,
     val asistenciaId: Long,
-    val estudianteId: Int,
+    val estudianteId: Long,
     val estado: String = "FALTA",
+    val carnetEstudiante: Int = 0,
     val nombreEstudiante: String = "",
     val apellidoEstudiante: String = ""
 ) {
@@ -14,7 +15,7 @@ data class DetalleAsistencia(
         fun insertar(db: AttendanceDatabase, detalle: DetalleAsistencia) {
             db.detalleAsistenciaQueries.insertDetalle(
                 asistencia_id = detalle.asistenciaId,
-                estudiante_id = detalle.estudianteId.toLong(),
+                estudiante_id = detalle.estudianteId,
                 estado = detalle.estado
             )
         }
@@ -26,7 +27,7 @@ data class DetalleAsistencia(
                     DetalleAsistencia(
                         id = it.id,
                         asistenciaId = it.asistencia_id,
-                        estudianteId = it.estudiante_id.toInt(),
+                        estudianteId = it.estudiante_id,
                         estado = it.estado
                     )
                 }
@@ -39,8 +40,9 @@ data class DetalleAsistencia(
                     DetalleAsistencia(
                         id = it.id,
                         asistenciaId = it.asistencia_id,
-                        estudianteId = it.estudiante_id.toInt(),
+                        estudianteId = it.estudiante_id,
                         estado = it.estado,
+                        carnetEstudiante = it.carnet_identidad.toInt(),
                         nombreEstudiante = it.nombre,
                         apellidoEstudiante = it.apellido
                     )
@@ -50,13 +52,13 @@ data class DetalleAsistencia(
         fun actualizarEstado(
             db: AttendanceDatabase,
             asistenciaId: Long,
-            estudianteId: Int,
+            estudianteId: Long,
             estado: String
         ) {
             db.detalleAsistenciaQueries.updateEstado(
                 estado = estado,
                 asistencia_id = asistenciaId,
-                estudiante_id = estudianteId.toLong()
+                estudiante_id = estudianteId
             )
         }
 

@@ -4,208 +4,163 @@ import androidx.compose.runtime.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.attendance.controller.AsistenciaDetalleController
-import com.example.attendance.controller.AsistenciaViewController
-import com.example.attendance.controller.EstudianteHomeController
-import com.example.attendance.controller.InscritosViewController
-import com.example.attendance.controller.LoginController
-import com.example.attendance.controller.MateriaDocenteController
 import com.example.attendance.db.AttendanceDatabase
-import com.example.attendance.model.AsistenciaModel
-import com.example.attendance.model.DetalleAsistenciaModel
-import com.example.attendance.model.DocenteModel
-import com.example.attendance.model.EstudianteModel
-import com.example.attendance.model.InscritoModel
-import com.example.attendance.model.MateriaModel
+import com.example.attendance.di.AttendanceContainer
 import com.example.attendance.view.*
 import com.example.attendance.view.theme.AttendanceTheme
 
 @Composable
 fun App(db: AttendanceDatabase) {
     val navController = rememberNavController()
-
-    val docenteModel = remember { DocenteModel(db) }
-    val estudianteModel = remember { EstudianteModel(db) }
-    val materiaModel = remember { MateriaModel(db) }
-    val inscritoModel = remember { InscritoModel(db) }
-    val asistenciaModel = remember { AsistenciaModel(db) }
-    val detalleAsistenciaModel = remember { DetalleAsistenciaModel(db) }
-
-    val docenteController = remember {
-        MateriaDocenteController(
-            docenteModel = docenteModel,
-            materiaModel = materiaModel
-        )
-    }
-    val estudianteController = remember {
-        EstudianteHomeController(
-            estudianteModel = estudianteModel,
-            materiaModel = materiaModel
-        )
-    }
-    val loginController = remember {
-        LoginController(docenteModel, estudianteModel)
-    }
-    val asistenciaController = remember {
-        AsistenciaViewController(
-            estudianteModel = estudianteModel,
-            asistenciaModel = asistenciaModel,
-            detalleAsistenciaModel = detalleAsistenciaModel
-        )
-    }
-    val asistenciaDetalleController = remember {
-        AsistenciaDetalleController(detalleAsistenciaModel)
-    }
-    val inscritosController = remember {
-        InscritosViewController(estudianteModel, inscritoModel)
-    }
+    val container = remember { AttendanceContainer(db) }
+    val docenteController = container.materiaDocenteController
+    val estudianteController = container.estudianteHomeController
+    val loginController = container.loginController
+    val asistenciaController = container.asistenciaViewController
+    val asistenciaDetalleController = container.asistenciaDetalleController
+    val inscritosController = container.inscritosViewController
 
     AttendanceTheme {
         NavHost(navController = navController, startDestination = "login") {
 
             composable("login") {
-                LoginView(
-                    onIngresar = { carnet, esDocente ->
-                        val error = loginController.iniciarSesion(carnet, esDocente)
-                        if (error == null) {
-                            val carnetInt = carnet.toIntOrNull()
-                            if (carnetInt != null) {
-                                if (esDocente) {
-                                    docenteController.cargarDocente(carnetInt)
-                                } else {
-                                    estudianteController.cargarEstudiante(carnetInt)
-                                }
-                            }
-                            navController.navigate(if (esDocente) "docente_home" else "estudiante_home") {
-                                popUpTo("login") { inclusive = true }
-                            }
-                        }
-                        error
-                    }
-                )
-            }
+                val loginEvent by loginController.navigationEvent.collectAsState()
 
-            composable("docente_home") {
-                val docente by docenteController.docente.collectAsState()
-                val materias by docenteController.materias.collectAsState()
+                LaunchedEffect(loginEvent) {
+                    val event = loginEvent ?: return@LaunchedEffect
+                    asistenciaController.limpiar()
+                    asistenciaDetalleController.limpiar()
+                    inscritosController.limpiar()
 
-                MateriaDocenteView(
-                    materias = materias,
-                    onCrearMateria = { sigla, nombre, grupo ->
-                        if (sigla.isBlank() || nombre.isBlank() || grupo.isBlank()) return@MateriaDocenteView false
-                        docenteController.crearMateria(sigla, nombre, grupo)
-                        true
-                    },
-                    onMateriaClick = { materiaId ->
-                        val materiaSeleccionada = materias.find { it.id == materiaId }
-                        if (materiaSeleccionada != null) {
-                            asistenciaController.seleccionarMateria(materiaSeleccionada)
-                            navController.navigate("asistencia")
+                    if (event.esDocente) {
+                        docenteController.cargarDocente(event.carnet)
+                        navController.navigate("docente_home") {
+                            popUpTo("login") { inclusive = true }
                         }
-                    },
-                    onLogout = {
-                        docenteController.cerrarSesion()
-                        asistenciaController.limpiar()
-                        asistenciaDetalleController.limpiar()
-                        inscritosController.limpiar()
-                        navController.navigate("login") {
+                    } else {
+                        estudianteController.cargarEstudiante(event.carnet)
+                        navController.navigate("estudiante_home") {
                             popUpTo("login") { inclusive = true }
                         }
                     }
-                )
+                    loginController.limpiarNavegacion()
+                }
+
+                LoginView(controller = loginController)
+            }
+
+            composable("docente_home") {
+                val docenteEvent by docenteController.navigationEvent.collectAsState()
+
+                LaunchedEffect(docenteEvent) {
+                    when (val event = docenteEvent) {
+                        null -> Unit
+                        is com.example.attendance.controller.MateriaDocenteController.NavigationEvent.IrAsistencia -> {
+                            asistenciaController.seleccionarMateria(event.materia)
+                            navController.navigate("asistencia")
+                        }
+
+                        com.example.attendance.controller.MateriaDocenteController.NavigationEvent.IrLogin -> {
+                            asistenciaController.limpiar()
+                            asistenciaDetalleController.limpiar()
+                            inscritosController.limpiar()
+                            navController.navigate("login") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        }
+                    }
+                    if (docenteEvent != null) docenteController.limpiarNavegacion()
+                }
+
+                MateriaDocenteView(controller = docenteController)
             }
 
             composable("asistencia") {
-                val asistencias by asistenciaController.asistencias.collectAsState()
                 val materia by asistenciaController.materiaSeleccionada.collectAsState()
+                val asistenciaEvent by asistenciaController.navigationEvent.collectAsState()
 
                 if (materia == null) {
                     LaunchedEffect(Unit) { navController.popBackStack() }
                     return@composable
                 }
-                val materiaActual = materia ?: return@composable
 
-                AsistenciaView(
-                    materiaNombre = "${materiaActual.sigla} - ${materiaActual.grupo}",
-                    asistencias = asistencias,
-                    onBack = { navController.popBackStack() },
-                    onInscritosClick = {
-                        inscritosController.seleccionarMateria(materiaActual)
-                        navController.navigate("inscritos")
-                    },
-                    onIniciarAsistencia = {
-                        val asistenciaId = asistenciaController.iniciarAsistenciaSeleccionada()
-                        if (asistenciaId != null) {
-                            asistenciaDetalleController.seleccionarAsistencia(asistenciaId)
+                LaunchedEffect(asistenciaEvent) {
+                    when (val event = asistenciaEvent) {
+                        null -> Unit
+                        com.example.attendance.controller.AsistenciaViewController.NavigationEvent.Volver -> {
+                            navController.popBackStack()
+                        }
+
+                        is com.example.attendance.controller.AsistenciaViewController.NavigationEvent.IrInscritos -> {
+                            inscritosController.seleccionarMateria(event.materia)
+                            navController.navigate("inscritos")
+                        }
+
+                        is com.example.attendance.controller.AsistenciaViewController.NavigationEvent.IrDetalle -> {
+                            asistenciaDetalleController.seleccionarAsistencia(event.asistenciaId)
                             navController.navigate("asistencia_detalle")
                         }
-                    },
-                    onAsistenciaClick = { asistenciaId ->
-                        asistenciaDetalleController.seleccionarAsistencia(asistenciaId)
-                        navController.navigate("asistencia_detalle")
                     }
-                )
+                    if (asistenciaEvent != null) asistenciaController.limpiarNavegacion()
+                }
+
+                AsistenciaView(controller = asistenciaController)
             }
 
             composable("inscritos") {
                 val materia by inscritosController.materiaSeleccionada.collectAsState()
-                val inscritos by inscritosController.inscritos.collectAsState()
+                val inscritosEvent by inscritosController.navigationEvent.collectAsState()
 
                 if (materia == null) {
                     LaunchedEffect(Unit) { navController.popBackStack() }
                     return@composable
                 }
 
-                val materiaActual = materia ?: return@composable
-
-                InscritosView(
-                    materiaNombre = "${materiaActual.sigla} - ${materiaActual.grupo}",
-                    inscritos = inscritos,
-                    onBack = { navController.popBackStack() },
-                    onAgregarEstudiante = { carnet, nombre, apellido ->
-                        inscritosController.agregarEstudiante(carnet, nombre, apellido)
-                    },
-                    onImportarCsv = { contenido ->
-                        inscritosController.importarDesdeCsv(contenido)
+                LaunchedEffect(inscritosEvent) {
+                    if (inscritosEvent is com.example.attendance.controller.InscritosViewController.NavigationEvent.Volver) {
+                        navController.popBackStack()
+                        inscritosController.limpiarNavegacion()
                     }
-                )
+                }
+
+                InscritosView(controller = inscritosController)
             }
 
             composable("asistencia_detalle") {
                 val asistenciaId by asistenciaDetalleController.asistenciaSeleccionadaId.collectAsState()
-                val detalles by asistenciaDetalleController.detalles.collectAsState()
+                val detalleEvent by asistenciaDetalleController.navigationEvent.collectAsState()
 
                 if (asistenciaId == null) {
                     LaunchedEffect(Unit) { navController.popBackStack() }
                     return@composable
                 }
 
-                AsistenciaDetalleView(
-                    detalles = detalles,
-                    onBack = { navController.popBackStack() },
-                    onToggleEstado = { estudianteId, estadoActual ->
-                        asistenciaDetalleController.alternarEstado(estudianteId, estadoActual)
+                LaunchedEffect(detalleEvent) {
+                    if (detalleEvent is com.example.attendance.controller.AsistenciaDetalleController.NavigationEvent.Volver) {
+                        navController.popBackStack()
+                        asistenciaDetalleController.limpiarNavegacion()
                     }
-                )
+                }
+
+                AsistenciaDetalleView(controller = asistenciaDetalleController)
             }
 
             composable("estudiante_home") {
-                val estudiante by estudianteController.estudiante.collectAsState()
-                val materias by estudianteController.materias.collectAsState()
+                val estudianteEvent by estudianteController.navigationEvent.collectAsState()
 
-                EstudianteHomeView(
-                    carnet = estudiante?.carnetIdentidad ?: 0,
-                    materias = materias,
-                    onLogout = {
-                        estudianteController.cerrarSesion()
+                LaunchedEffect(estudianteEvent) {
+                    if (estudianteEvent is com.example.attendance.controller.EstudianteHomeController.NavigationEvent.IrLogin) {
                         asistenciaController.limpiar()
                         asistenciaDetalleController.limpiar()
                         inscritosController.limpiar()
                         navController.navigate("login") {
                             popUpTo("login") { inclusive = true }
                         }
+                        estudianteController.limpiarNavegacion()
                     }
-                )
+                }
+
+                EstudianteHomeView(controller = estudianteController)
             }
         }
     }

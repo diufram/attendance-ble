@@ -1,26 +1,31 @@
 package com.example.attendance.controller
 
+import com.example.attendance.db.AttendanceDatabase
 import com.example.attendance.model.Estudiante
-import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.Inscrito
-import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.Materia
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class InscritosViewController(
-    private val estudianteModel: EstudianteModel,
-    private val inscritoModel: InscritoModel
+    private val db: AttendanceDatabase
 ) {
+    sealed class NavigationEvent {
+        data object Volver : NavigationEvent()
+    }
+
     private val _materiaSeleccionada = MutableStateFlow<Materia?>(null)
     val materiaSeleccionada: StateFlow<Materia?> = _materiaSeleccionada
 
     private val _inscritos = MutableStateFlow<List<Estudiante>>(emptyList())
     val inscritos: StateFlow<List<Estudiante>> = _inscritos
 
+    private val _navigationEvent = MutableStateFlow<NavigationEvent?>(null)
+    val navigationEvent: StateFlow<NavigationEvent?> = _navigationEvent
+
     fun seleccionarMateria(materia: Materia) {
         _materiaSeleccionada.value = materia
-        _inscritos.value = estudianteModel.obtenerPorMateria(materia.id)
+        _inscritos.value = Estudiante.obtenerPorMateria(db, materia.id)
     }
 
     fun agregarEstudiante(carnetInput: String, nombre: String, apellido: String): Boolean {
@@ -28,11 +33,17 @@ class InscritosViewController(
         val carnet = carnetInput.toIntOrNull() ?: return false
         if (nombre.isBlank() || apellido.isBlank()) return false
 
-        if (estudianteModel.obtener(carnet) == null) {
-            estudianteModel.insertar(Estudiante(carnet, nombre, apellido))
-        }
-        inscritoModel.insertar(Inscrito(materiaId = materiaId, estudianteId = carnet))
-        _inscritos.value = estudianteModel.obtenerPorMateria(materiaId)
+        val insertOk = runCatching {
+            val estudianteId = Estudiante.insertar(
+                db,
+                Estudiante(carnetIdentidad = carnet, nombre = nombre, apellido = apellido)
+            )
+            Inscrito.insertar(db, Inscrito(materiaId = materiaId, estudianteId = estudianteId))
+        }.isSuccess
+
+        if (!insertOk) return false
+
+        _inscritos.value = Estudiante.obtenerPorMateria(db, materiaId)
         return true
     }
 
@@ -48,16 +59,25 @@ class InscritosViewController(
             val nombre = campos[1]
             val apellido = campos[2]
 
-            if (estudianteModel.obtener(carnet) == null) {
-                estudianteModel.insertar(Estudiante(carnet, nombre, apellido))
-            }
-            inscritoModel.insertar(Inscrito(materiaId = materiaId, estudianteId = carnet))
+            val estudianteId = Estudiante.insertar(
+                db,
+                Estudiante(carnetIdentidad = carnet, nombre = nombre, apellido = apellido)
+            )
+            Inscrito.insertar(db, Inscrito(materiaId = materiaId, estudianteId = estudianteId))
         }
-        _inscritos.value = estudianteModel.obtenerPorMateria(materiaId)
+        _inscritos.value = Estudiante.obtenerPorMateria(db, materiaId)
     }
 
     fun limpiar() {
         _materiaSeleccionada.value = null
         _inscritos.value = emptyList()
+    }
+
+    fun solicitarVolver() {
+        _navigationEvent.value = NavigationEvent.Volver
+    }
+
+    fun limpiarNavegacion() {
+        _navigationEvent.value = null
     }
 }

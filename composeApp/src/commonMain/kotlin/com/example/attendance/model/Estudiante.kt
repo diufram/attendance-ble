@@ -3,24 +3,40 @@ package com.example.attendance.model
 import com.example.attendance.db.AttendanceDatabase
 
 data class Estudiante(
+    val id: Long = 0,
     val carnetIdentidad: Int,
     val nombre: String,
     val apellido: String
 ) {
     companion object {
-        fun insertar(db: AttendanceDatabase, estudiante: Estudiante) {
+        fun insertar(db: AttendanceDatabase, estudiante: Estudiante): Long {
             db.estudianteQueries.insertEstudiante(
                 carnet_identidad = estudiante.carnetIdentidad.toLong(),
                 nombre = estudiante.nombre,
                 apellido = estudiante.apellido
             )
+            return db.estudianteQueries.getLastInsertId().executeAsOne()
         }
 
-        fun obtener(db: AttendanceDatabase, carnet: Int): Estudiante? {
-            return db.estudianteQueries.getEstudiante(carnet.toLong())
+        fun obtenerPorId(db: AttendanceDatabase, id: Long): Estudiante? {
+            return db.estudianteQueries.getEstudianteById(id)
                 .executeAsOneOrNull()
                 ?.let {
                     Estudiante(
+                        id = it.id,
+                        carnetIdentidad = it.carnet_identidad.toInt(),
+                        nombre = it.nombre,
+                        apellido = it.apellido
+                    )
+                }
+        }
+
+        fun obtenerPorCarnet(db: AttendanceDatabase, carnet: Int): Estudiante? {
+            return db.estudianteQueries.getEstudianteByCarnet(carnet.toLong())
+                .executeAsOneOrNull()
+                ?.let {
+                    Estudiante(
+                        id = it.id,
                         carnetIdentidad = it.carnet_identidad.toInt(),
                         nombre = it.nombre,
                         apellido = it.apellido
@@ -33,6 +49,7 @@ data class Estudiante(
                 .executeAsList()
                 .map {
                     Estudiante(
+                        id = it.id,
                         carnetIdentidad = it.carnet_identidad.toInt(),
                         nombre = it.nombre,
                         apellido = it.apellido
@@ -45,6 +62,7 @@ data class Estudiante(
                 .executeAsList()
                 .map {
                     Estudiante(
+                        id = it.id,
                         carnetIdentidad = it.carnet_identidad.toInt(),
                         nombre = it.nombre,
                         apellido = it.apellido
@@ -56,12 +74,12 @@ data class Estudiante(
             db.estudianteQueries.updateEstudiante(
                 nombre = estudiante.nombre,
                 apellido = estudiante.apellido,
-                carnet_identidad = estudiante.carnetIdentidad.toLong()
+                id = estudiante.id
             )
         }
 
-        fun eliminar(db: AttendanceDatabase, carnet: Int) {
-            db.estudianteQueries.deleteEstudiante(carnet.toLong())
+        fun eliminar(db: AttendanceDatabase, id: Long) {
+            db.estudianteQueries.deleteEstudiante(id)
         }
     }
 }

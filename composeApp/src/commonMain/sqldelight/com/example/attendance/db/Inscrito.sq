@@ -2,13 +2,20 @@ CREATE TABLE inscrito (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
     materia_id INTEGER NOT NULL,
     estudiante_id INTEGER NOT NULL,
+    bitmap_index INTEGER NOT NULL,
+    UNIQUE(materia_id, bitmap_index),
     FOREIGN KEY (materia_id) REFERENCES materia(id),
-    FOREIGN KEY (estudiante_id) REFERENCES estudiante(carnet_identidad)
+    FOREIGN KEY (estudiante_id) REFERENCES estudiante(id)
 );
 
 insertInscrito:
-INSERT INTO inscrito(materia_id, estudiante_id)
-VALUES (?, ?);
+INSERT INTO inscrito(materia_id, estudiante_id, bitmap_index)
+VALUES (?, ?, ?);
+
+getNextBitmapIndexByMateria:
+SELECT COALESCE(MAX(bitmap_index), -1) + 1
+FROM inscrito
+WHERE materia_id = ?;
 
 getInscritoById:
 SELECT * FROM inscrito WHERE id = ?;
@@ -17,16 +24,18 @@ getAllInscritos:
 SELECT * FROM inscrito;
 
 getAlumnosByMateria:
-SELECT e.carnet_identidad, e.nombre, e.apellido
+SELECT e.id, e.carnet_identidad, e.nombre, e.apellido
 FROM estudiante e
-INNER JOIN inscrito i ON e.carnet_identidad = i.estudiante_id
-WHERE i.materia_id = ?;
+INNER JOIN inscrito i ON e.id = i.estudiante_id
+WHERE i.materia_id = ?
+ORDER BY i.bitmap_index ASC;
 
 getMateriasByEstudiante:
-SELECT m.id, m.sigla, m.nombre, m.grupo, m.docente_id
+SELECT m.id, m.sigla, m.nombre, m.grupo, m.periodo, m.docente_nombre, m.docente_id
 FROM materia m
 INNER JOIN inscrito i ON m.id = i.materia_id
-WHERE i.estudiante_id = ?;
+INNER JOIN estudiante e ON e.id = i.estudiante_id
+WHERE e.carnet_identidad = ?;
 
 deleteInscrito:
 DELETE FROM inscrito WHERE id = ?;

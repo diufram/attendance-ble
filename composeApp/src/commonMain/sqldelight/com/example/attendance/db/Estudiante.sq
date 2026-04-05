@@ -1,5 +1,6 @@
 CREATE TABLE estudiante (
-    carnet_identidad INTEGER NOT NULL PRIMARY KEY,
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    carnet_identidad INTEGER NOT NULL,
     nombre TEXT NOT NULL,
     apellido TEXT NOT NULL
 );
@@ -8,15 +9,21 @@ insertEstudiante:
 INSERT INTO estudiante(carnet_identidad, nombre, apellido)
 VALUES (?, ?, ?);
 
-getEstudiante:
-SELECT * FROM estudiante WHERE carnet_identidad = ?;
+getLastInsertId:
+SELECT last_insert_rowid();
+
+getEstudianteById:
+SELECT * FROM estudiante WHERE id = ?;
+
+getEstudianteByCarnet:
+SELECT * FROM estudiante WHERE carnet_identidad = ? ORDER BY id DESC LIMIT 1;
 
 getAllEstudiantes:
 SELECT * FROM estudiante;
 
 updateEstudiante:
 UPDATE estudiante SET nombre = ?, apellido = ?
-WHERE carnet_identidad = ?;
+WHERE id = ?;
 
 deleteEstudiante:
-DELETE FROM estudiante WHERE carnet_identidad = ?;
+DELETE FROM estudiante WHERE id = ?;

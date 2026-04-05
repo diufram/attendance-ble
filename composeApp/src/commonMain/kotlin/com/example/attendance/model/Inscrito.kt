@@ -5,13 +5,18 @@ import com.example.attendance.db.AttendanceDatabase
 data class Inscrito(
     val id: Long = 0,
     val materiaId: Long,
-    val estudianteId: Int
+    val estudianteId: Long,
+    val bitMapIndex: Int = 0
 ) {
     companion object {
         fun insertar(db: AttendanceDatabase, inscrito: Inscrito) {
+            val nextIndex = db.inscritoQueries.getNextBitmapIndexByMateria(inscrito.materiaId)
+                .executeAsOne()
+                .toInt()
             db.inscritoQueries.insertInscrito(
                 materia_id = inscrito.materiaId,
-                estudiante_id = inscrito.estudianteId.toLong()
+                estudiante_id = inscrito.estudianteId,
+                bitmap_index = nextIndex.toLong()
             )
         }
 
@@ -22,7 +27,8 @@ data class Inscrito(
                     Inscrito(
                         id = it.id,
                         materiaId = it.materia_id,
-                        estudianteId = it.estudiante_id.toInt()
+                        estudianteId = it.estudiante_id,
+                        bitMapIndex = it.bitmap_index.toInt()
                     )
                 }
         }
@@ -34,7 +40,8 @@ data class Inscrito(
                     Inscrito(
                         id = it.id,
                         materiaId = it.materia_id,
-                        estudianteId = it.estudiante_id.toInt()
+                        estudianteId = it.estudiante_id,
+                        bitMapIndex = it.bitmap_index.toInt()
                     )
                 }
         }
@@ -43,10 +50,10 @@ data class Inscrito(
             db.inscritoQueries.deleteInscrito(id)
         }
 
-        fun eliminarPorMateriaEstudiante(db: AttendanceDatabase, materiaId: Long, estudianteId: Int) {
+        fun eliminarPorMateriaEstudiante(db: AttendanceDatabase, materiaId: Long, estudianteId: Long) {
             db.inscritoQueries.deleteInscritoByMateriaEstudiante(
                 materia_id = materiaId,
-                estudiante_id = estudianteId.toLong()
+                estudiante_id = estudianteId
             )
         }
     }

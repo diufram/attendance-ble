@@ -7,6 +7,8 @@ data class Materia(
     val sigla: String,
     val nombre: String,
     val grupo: String,
+    val periodo: String,
+    val docenteNombre: String,
     val docenteId: Int
 ) {
     companion object {
@@ -15,6 +17,8 @@ data class Materia(
                 sigla = materia.sigla,
                 nombre = materia.nombre,
                 grupo = materia.grupo,
+                periodo = materia.periodo,
+                docente_nombre = materia.docenteNombre,
                 docente_id = materia.docenteId.toLong()
             )
         }
@@ -28,6 +32,8 @@ data class Materia(
                         sigla = it.sigla,
                         nombre = it.nombre,
                         grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteNombre = it.docente_nombre,
                         docenteId = it.docente_id.toInt()
                     )
                 }
@@ -42,6 +48,8 @@ data class Materia(
                         sigla = it.sigla,
                         nombre = it.nombre,
                         grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteNombre = it.docente_nombre,
                         docenteId = it.docente_id.toInt()
                     )
                 }
@@ -56,13 +64,15 @@ data class Materia(
                         sigla = it.sigla,
                         nombre = it.nombre,
                         grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteNombre = it.docente_nombre,
                         docenteId = it.docente_id.toInt()
                     )
                 }
         }
 
-        fun obtenerPorSiglaGrupo(db: AttendanceDatabase, sigla: String, grupo: String): Materia? {
-            return db.materiaQueries.getMateriaBySiglaGrupo(sigla, grupo)
+        fun obtenerPorFormacion(db: AttendanceDatabase, sigla: String, grupo: String, periodo: String): Materia? {
+            return db.materiaQueries.getMateriaByFormacion(sigla, grupo, periodo)
                 .executeAsOneOrNull()
                 ?.let {
                     Materia(
@@ -70,6 +80,8 @@ data class Materia(
                         sigla = it.sigla,
                         nombre = it.nombre,
                         grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteNombre = it.docente_nombre,
                         docenteId = it.docente_id.toInt()
                     )
                 }
@@ -84,6 +96,8 @@ data class Materia(
                         sigla = it.sigla,
                         nombre = it.nombre,
                         grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteNombre = it.docente_nombre,
                         docenteId = it.docente_id.toInt()
                     )
                 }
@@ -94,6 +108,8 @@ data class Materia(
                 sigla = materia.sigla,
                 nombre = materia.nombre,
                 grupo = materia.grupo,
+                periodo = materia.periodo,
+                docente_nombre = materia.docenteNombre,
                 id = materia.id
             )
         }

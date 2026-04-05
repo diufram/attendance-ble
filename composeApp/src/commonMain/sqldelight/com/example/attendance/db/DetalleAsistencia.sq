@@ -4,7 +4,7 @@ CREATE TABLE detalle_asistencia (
     estudiante_id INTEGER NOT NULL,
     estado TEXT NOT NULL DEFAULT 'FALTA',
     FOREIGN KEY (asistencia_id) REFERENCES asistencia(id),
-    FOREIGN KEY (estudiante_id) REFERENCES estudiante(carnet_identidad)
+    FOREIGN KEY (estudiante_id) REFERENCES estudiante(id)
 );
 
 insertDetalle:
@@ -16,9 +16,9 @@ SELECT * FROM detalle_asistencia WHERE id = ?;
 
 getDetalleByAsistencia:
 SELECT da.id, da.asistencia_id, da.estudiante_id, da.estado,
-       e.nombre, e.apellido
+       e.carnet_identidad, e.nombre, e.apellido
 FROM detalle_asistencia da
-INNER JOIN estudiante e ON da.estudiante_id = e.carnet_identidad
+INNER JOIN estudiante e ON da.estudiante_id = e.id
 WHERE da.asistencia_id = ?;
 
 updateEstado:

@@ -1,25 +1,52 @@
 package com.example.attendance.view
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.attendance.controller.LoginController
+import com.example.attendance.view.theme.AppPrimaryButton
+import com.example.attendance.view.theme.AppSecondaryButton
+import com.example.attendance.view.theme.AppTextField
+import com.example.attendance.view.theme.AttendanceThemeTokens
 
 @Composable
 fun LoginView(
-    onIngresar: (carnet: String, esDocente: Boolean) -> String?
+    controller: LoginController
 ) {
+    val metrics = AttendanceThemeTokens.metrics
+    val sizes = AttendanceThemeTokens.textSizes
+
     var carnet by remember { mutableStateOf("") }
     var esDocente by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf("") }
+    val error by controller.errorMensaje.collectAsState()
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -29,133 +56,107 @@ fun LoginView(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp, vertical = 20.dp)
-                .widthIn(max = 460.dp),
+                .widthIn(max = 420.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(
-                text = "Attendance",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Inicia sesion para continuar",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-
-            Spacer(modifier = Modifier.height(28.dp))
-
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                ),
-                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+                shape = RoundedCornerShape(28.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
             ) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(4.dp)
+                        .padding(horizontal = 20.dp, vertical = 22.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    TextButton(
-                        onClick = { esDocente = true },
-                        modifier = Modifier.weight(1f).height(44.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (esDocente)
-                                MaterialTheme.colorScheme.surface
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 0.dp
-                        )
+                    Icon(
+                        imageVector = Icons.Filled.Badge,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+
+                    Text(
+                        text = "Attendance",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+
+                    Text(
+                        text = "Inicia sesion para continuar",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Text("Docente", fontWeight = FontWeight.Medium)
+                        if (esDocente) {
+                            AppPrimaryButton(
+                                text = "Docente",
+                                onClick = { esDocente = true; controller.limpiarError() },
+                                modifier = Modifier.weight(1f)
+                            )
+                            AppSecondaryButton(
+                                text = "Estudiante",
+                                onClick = { esDocente = false; controller.limpiarError() },
+                                modifier = Modifier.weight(1f)
+                            )
+                        } else {
+                            AppSecondaryButton(
+                                text = "Docente",
+                                onClick = { esDocente = true; controller.limpiarError() },
+                                modifier = Modifier.weight(1f)
+                            )
+                            AppPrimaryButton(
+                                text = "Estudiante",
+                                onClick = { esDocente = false; controller.limpiarError() },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
 
-                    Spacer(modifier = Modifier.width(4.dp))
+                    AppTextField(
+                        value = carnet,
+                        onValueChange = {
+                            carnet = it
+                            controller.limpiarError()
+                        },
+                        label = "Carnet de Identidad",
+                        modifier = Modifier.fillMaxWidth()
+                    )
 
-                    TextButton(
-                        onClick = { esDocente = false },
-                        modifier = Modifier.weight(1f).height(44.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!esDocente)
-                                MaterialTheme.colorScheme.surface
-                            else
-                                MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = MaterialTheme.colorScheme.onSurface
-                        ),
-                        elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = 0.dp
+                    AnimatedVisibility(visible = !error.isNullOrEmpty()) {
+                        Text(
+                            text = error ?: "",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    ) {
-                        Text("Estudiante", fontWeight = FontWeight.Medium)
                     }
+
+                    AppPrimaryButton(
+                        text = "Ingresar",
+                        onClick = { controller.ingresar(carnet, esDocente) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(18.dp))
-
-            OutlinedTextField(
-                value = carnet,
-                onValueChange = {
-                    carnet = it
-                    error = ""
-                },
-                label = { Text("Carnet de Identidad") },
-                placeholder = { Text("Ej: 12345678") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary
-                )
-            )
-
-            AnimatedVisibility(visible = error.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = error,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Button(
-                onClick = {
-                    error = onIngresar(carnet, esDocente) ?: ""
-                },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary
-                )
-            ) {
-                Text(
-                    text = "Ingresar",
-                    fontWeight = FontWeight.Medium
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
             Text(
                 text = if (esDocente)
-                    "Si no existe, se creará tu perfil de docente"
+                    "Se creara tu perfil docente si no existe"
                 else
-                    "Si no existe, se creará tu perfil de estudiante",
-                style = MaterialTheme.typography.bodySmall,
+                    "Se creara tu perfil estudiante si no existe",
+                style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
