@@ -1,28 +1,26 @@
 package com.example.attendance.controller
 
-import com.example.attendance.db.AttendanceDatabase
-import com.example.attendance.model.*
+import com.example.attendance.model.EstudianteModel
+import com.example.attendance.model.MateriaModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class EstudianteHomeController(
-    private val db: AttendanceDatabase,
+class MateriaEstudianteController(
+    private val estudianteModel: EstudianteModel,
+    private val materiaModel: MateriaModel,
 ) {
     sealed class NavigationEvent {
         data object IrLogin : NavigationEvent()
     }
 
-    private val _estudiante = MutableStateFlow<Estudiante?>(null)
-    val estudiante: StateFlow<Estudiante?> = _estudiante
-
-    private val _materias = MutableStateFlow<List<Materia>>(emptyList())
-    val materias: StateFlow<List<Materia>> = _materias
+    private val _estudiante = MutableStateFlow<EstudianteModel?>(null)
+    val estudiante: StateFlow<EstudianteModel?> = _estudiante
 
     private val _navigationEvent = MutableStateFlow<NavigationEvent?>(null)
     val navigationEvent: StateFlow<NavigationEvent?> = _navigationEvent
 
     fun cargarEstudiante(carnet: Int): Boolean {
-        val estudiante = Estudiante.obtenerPorCarnet(db, carnet) ?: return false
+        val estudiante = estudianteModel.obtenerPorCarnet(carnet) ?: return false
         _estudiante.value = estudiante
         cargarMaterias()
         return true
@@ -30,7 +28,7 @@ class EstudianteHomeController(
 
     fun cerrarSesion() {
         _estudiante.value = null
-        _materias.value = emptyList()
+        materiaModel.limpiarMateriasEstudiante()
     }
 
     fun solicitarCerrarSesion() {
@@ -44,8 +42,13 @@ class EstudianteHomeController(
 
     fun actualizarPerfil(nombre: String, apellido: String) {
         val estudianteActual = _estudiante.value ?: return
-        val actualizado = estudianteActual.copy(nombre = nombre, apellido = apellido)
-        Estudiante.actualizar(db, actualizado)
+        val actualizado = EstudianteModel(
+            id = estudianteActual.id,
+            carnetIdentidad = estudianteActual.carnetIdentidad,
+            nombre = nombre,
+            apellido = apellido
+        )
+        estudianteModel.actualizar(actualizado)
         _estudiante.value = actualizado
     }
 
@@ -53,6 +56,6 @@ class EstudianteHomeController(
 
     fun cargarMaterias() {
         val estudianteActual = _estudiante.value ?: return
-        _materias.value = Materia.obtenerPorEstudiante(db, estudianteActual.carnetIdentidad)
+        materiaModel.cargarMateriasEstudiante(estudianteActual.carnetIdentidad)
     }
 }

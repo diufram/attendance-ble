@@ -18,6 +18,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.attendance.controller.MateriaDocenteController
+import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AppTextField
@@ -26,11 +27,12 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaDocenteView(
-    controller: MateriaDocenteController
+    controller: MateriaDocenteController,
+    model: MateriaModel
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materias by controller.materias.collectAsState()
+    val materias by model.materiasDocente.collectAsState()
     var showDialog by remember { mutableStateOf(false) }
     var sigla by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }

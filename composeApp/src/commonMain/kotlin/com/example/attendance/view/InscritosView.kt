@@ -45,7 +45,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.InscritosViewController
+import com.example.attendance.controller.InscritosController
+import com.example.attendance.model.InscritoModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AppTextField
@@ -54,12 +55,13 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InscritosView(
-    controller: InscritosViewController,
+    controller: InscritosController,
+    model: InscritoModel,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materia by controller.materiaSeleccionada.collectAsState()
-    val inscritos by controller.inscritos.collectAsState()
+    val materia by model.materiaSeleccionada.collectAsState()
+    val inscritos by model.inscritosMateria.collectAsState()
     val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Inscritos"
     var mostrarDialogoEstudiante by remember { mutableStateOf(false) }
     var mostrarDialogoCsv by remember { mutableStateOf(false) }

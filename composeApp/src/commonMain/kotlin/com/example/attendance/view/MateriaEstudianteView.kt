@@ -15,17 +15,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.EstudianteHomeController
+import com.example.attendance.controller.MateriaEstudianteController
+import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.theme.AttendanceThemeTokens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun EstudianteHomeView(
-    controller: EstudianteHomeController
+fun MateriaEstudianteView(
+    controller: MateriaEstudianteController,
+    model: MateriaModel
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materias by controller.materias.collectAsState()
+    val materias by model.materiasEstudiante.collectAsState()
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(

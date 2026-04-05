@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.attendance.controller.AsistenciaDetalleController
+import com.example.attendance.model.DetalleAsistenciaModel
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
 
@@ -48,10 +49,11 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 @Composable
 fun AsistenciaDetalleView(
     controller: AsistenciaDetalleController,
+    model: DetalleAsistenciaModel,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val detalles by controller.detalles.collectAsState()
+    val detalles by model.detallesAsistencia.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(

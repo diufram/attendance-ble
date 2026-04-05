@@ -29,7 +29,8 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.AsistenciaViewController
+import com.example.attendance.controller.AsistenciaController
+import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
@@ -37,12 +38,13 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciaView(
-    controller: AsistenciaViewController
+    controller: AsistenciaController,
+    model: AsistenciaModel
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materia by controller.materiaSeleccionada.collectAsState()
-    val asistencias by controller.asistencias.collectAsState()
+    val materia by model.materiaSeleccionada.collectAsState()
+    val asistencias by model.asistenciasMateria.collectAsState()
     val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Asistencia"
     Scaffold(
         topBar = {

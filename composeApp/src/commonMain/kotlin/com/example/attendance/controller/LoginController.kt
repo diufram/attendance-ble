@@ -1,13 +1,13 @@
 package com.example.attendance.controller
 
-import com.example.attendance.db.AttendanceDatabase
-import com.example.attendance.model.Docente
-import com.example.attendance.model.Estudiante
+import com.example.attendance.model.DocenteModel
+import com.example.attendance.model.EstudianteModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class LoginController(
-    private val db: AttendanceDatabase
+    private val docenteModel: DocenteModel,
+    private val estudianteModel: EstudianteModel
 ) {
     data class LoginSuccess(
         val carnet: Int,
@@ -24,17 +24,17 @@ class LoginController(
         val carnet = carnetInput.toIntOrNull() ?: return "Ingresa un carnet valido"
 
         if (esDocente) {
-            var docente = Docente.obtener(db, carnet)
+            var docente = docenteModel.obtener(carnet)
             if (docente == null) {
-                Docente.insertar(db, Docente(carnet, "", ""))
-                docente = Docente.obtener(db, carnet)
+                docenteModel.insertar(DocenteModel(carnetIdentidad = carnet, nombre = "", apellido = ""))
+                docente = docenteModel.obtener(carnet)
             }
             if (docente == null) return "No se pudo iniciar sesion"
         } else {
-            var estudiante = Estudiante.obtenerPorCarnet(db, carnet)
+            var estudiante = estudianteModel.obtenerPorCarnet(carnet)
             if (estudiante == null) {
-                Estudiante.insertar(db, Estudiante(carnetIdentidad = carnet, nombre = "", apellido = ""))
-                estudiante = Estudiante.obtenerPorCarnet(db, carnet)
+                estudianteModel.insertar(EstudianteModel(carnetIdentidad = carnet, nombre = "", apellido = ""))
+                estudiante = estudianteModel.obtenerPorCarnet(carnet)
             }
             if (estudiante == null) return "No se pudo iniciar sesion"
         }
