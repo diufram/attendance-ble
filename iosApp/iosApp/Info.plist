@@ -6,5 +6,13 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>La camara se usa para escanear el QR de materia.</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
 </dict>
 </plist>

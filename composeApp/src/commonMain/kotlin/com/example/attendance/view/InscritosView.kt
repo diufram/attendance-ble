@@ -53,6 +53,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.attendance.model.InscritoModel
@@ -302,9 +303,30 @@ fun InscritosView(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                AppTextField(value = carnet, onValueChange = { carnet = it }, label = "Carnet", leadingIcon = Icons.Filled.Badge, modifier = Modifier.fillMaxWidth())
-                AppTextField(value = nombre, onValueChange = { nombre = it }, label = "Nombre", leadingIcon = Icons.Filled.Person, modifier = Modifier.fillMaxWidth())
-                AppTextField(value = apellido, onValueChange = { apellido = it }, label = "Apellido", leadingIcon = Icons.Filled.Person, modifier = Modifier.fillMaxWidth())
+                AppTextField(
+                    value = carnet,
+                    onValueChange = { carnet = it.filter(Char::isDigit) },
+                    label = "Carnet",
+                    leadingIcon = Icons.Filled.Badge,
+                    keyboardType = KeyboardType.Number,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                AppTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = "Nombre",
+                    leadingIcon = Icons.Filled.Person,
+                    keyboardType = KeyboardType.Text,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                AppTextField(
+                    value = apellido,
+                    onValueChange = { apellido = it },
+                    label = "Apellido",
+                    leadingIcon = Icons.Filled.Person,
+                    keyboardType = KeyboardType.Text,
+                    modifier = Modifier.fillMaxWidth()
+                )
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AppSecondaryButton(text = "Cancelar", onClick = { mostrarDialogoEstudiante = false }, modifier = Modifier.weight(1f))
                     AppPrimaryButton(text = "Guardar", onClick = {

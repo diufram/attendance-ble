@@ -59,6 +59,10 @@ class MateriaEstudianteController(
                 estudianteId = estudiante.id,
                 bitmapIndex = bitmapIndex
             )
+            materiaModel.actualizarBitmapIndexEstudiante(
+                materiaId = materia.id,
+                bitmapIndex = bitmapIndex
+            )
             materiaModel.cargarMateriasEstudiante(carnet)
             null
         } catch (_: Throwable) {

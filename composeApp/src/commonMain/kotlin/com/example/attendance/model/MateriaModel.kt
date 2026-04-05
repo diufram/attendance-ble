@@ -12,6 +12,7 @@ class MateriaModel(
     val periodo: String = "",
     val docenteNombre: String = "",
     val docenteId: Int = 0,
+    val bitmapIndexEstudiante: Int? = null,
     private val db: AttendanceDatabase? = null
 ) {
     private fun requireDb(): AttendanceDatabase = db ?: error("MateriaModel sin db")
@@ -33,7 +34,8 @@ class MateriaModel(
             grupo = materia.grupo,
             periodo = materia.periodo,
             docente_nombre = materia.docenteNombre,
-            docente_id = materia.docenteId.toLong()
+            docente_id = materia.docenteId.toLong(),
+            bitmap_index_estudiante = materia.bitmapIndexEstudiante?.toLong()
         )
     }
 
@@ -49,7 +51,8 @@ class MateriaModel(
                     grupo = it.grupo,
                     periodo = it.periodo,
                     docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt()
+                    docenteId = it.docente_id.toInt(),
+                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
                 )
             }
     }
@@ -66,7 +69,8 @@ class MateriaModel(
                     grupo = it.grupo,
                     periodo = it.periodo,
                     docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt()
+                    docenteId = it.docente_id.toInt(),
+                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
                 )
             }
     }
@@ -83,7 +87,8 @@ class MateriaModel(
                     grupo = it.grupo,
                     periodo = it.periodo,
                     docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt()
+                    docenteId = it.docente_id.toInt(),
+                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
                 )
             }
     }
@@ -126,7 +131,8 @@ class MateriaModel(
                     grupo = it.grupo,
                     periodo = it.periodo,
                     docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt()
+                    docenteId = it.docente_id.toInt(),
+                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
                 )
             }
     }
@@ -143,7 +149,8 @@ class MateriaModel(
                     grupo = it.grupo,
                     periodo = it.periodo,
                     docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt()
+                    docenteId = it.docente_id.toInt(),
+                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
                 )
             }
     }
@@ -157,6 +164,14 @@ class MateriaModel(
             periodo = materia.periodo,
             docente_nombre = materia.docenteNombre,
             id = materia.id
+        )
+    }
+
+    fun actualizarBitmapIndexEstudiante(materiaId: Long, bitmapIndex: Int) {
+        val database = requireDb()
+        database.materiaQueries.updateBitmapIndexEstudiante(
+            bitmap_index_estudiante = bitmapIndex.toLong(),
+            id = materiaId
         )
     }
 

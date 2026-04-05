@@ -44,7 +44,7 @@ WHERE i.materia_id = ?
 ORDER BY i.bitmap_index ASC;
 
 getMateriasByEstudiante:
-SELECT m.id, m.sigla, m.nombre, m.grupo, m.periodo, m.docente_nombre, m.docente_id
+SELECT m.id, m.sigla, m.nombre, m.grupo, m.periodo, m.docente_nombre, m.docente_id, m.bitmap_index_estudiante
 FROM materia m
 INNER JOIN inscrito i ON m.id = i.materia_id
 INNER JOIN estudiante e ON e.id = i.estudiante_id
