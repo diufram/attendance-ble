@@ -39,11 +39,13 @@ class InscritosController(
 
     fun importarDesdeCsv(contenidoCsv: String) {
         val materiaId = inscritoModel.materiaSeleccionada.value?.id ?: return
-        val lineas = contenidoCsv.lines().drop(1)
-        for (linea in lineas) {
+        val lineas = contenidoCsv.lines().map { it.trim() }.filter { it.isNotEmpty() }
+        for ((index, linea) in lineas.withIndex()) {
             if (linea.isBlank()) continue
             val campos = linea.split(",").map { it.trim() }
             if (campos.size < 3) continue
+
+            if (index == 0 && campos[0].toIntOrNull() == null) continue
 
             val carnet = campos[0].toIntOrNull() ?: continue
             val nombre = campos[1]

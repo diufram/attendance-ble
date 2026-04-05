@@ -1,14 +1,19 @@
 package com.example.attendance.view
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -19,10 +24,15 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.attendance.model.MateriaModel
+import com.example.attendance.view.theme.AppPrimaryButton
+import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
 import kotlinx.coroutines.launch
 
@@ -39,125 +49,235 @@ fun MateriaEstudianteView(
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     val scannerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val materiaSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var mostrarEscaner by remember { mutableStateOf(false) }
+    var mostrarMateriaSheet by remember { mutableStateOf(false) }
+    var materiaSeleccionada by remember { mutableStateOf<MateriaModel?>(null) }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = { Text("Mis materias") },
-                actions = {
-                    IconButton(onClick = { mostrarEscaner = true }) {
-                        Icon(
-                            imageVector = Icons.Filled.QrCodeScanner,
-                            contentDescription = "Escanear QR"
-                        )
-                    }
-                    TextButton(onClick = onLogout) { Text("Salir") }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
-    ) { padding ->
+    Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.TopCenter
-        ) {
-            val contentModifier = Modifier.fillMaxWidth().widthIn(max = 760.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.36f),
+                            MaterialTheme.colorScheme.surfaceVariant,
+                            MaterialTheme.colorScheme.background
+                        )
+                    )
+                )
+        )
 
-            if (materias.isEmpty()) {
-                Card(
-                    modifier = contentModifier.padding(top = 20.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    border = androidx.compose.foundation.BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.35f))
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .offset(x = (-88).dp, y = (-68).dp)
+                .size(196.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+        )
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .offset(x = 78.dp, y = 90.dp)
+                .size(220.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.1f))
+        )
+
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Column {
+                            Text("Mis materias", style = MaterialTheme.typography.titleLarge)
+                            Text(
+                                text = "Panel estudiante",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { mostrarEscaner = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.QrCodeScanner,
+                                contentDescription = "Escanear QR"
+                            )
+                        }
+                        TextButton(onClick = onLogout) {
+                            Icon(Icons.Filled.Logout, contentDescription = null)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Salir")
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = Color.Transparent,
+                        scrolledContainerColor = Color.Transparent,
+                        titleContentColor = MaterialTheme.colorScheme.onBackground,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                )
+            },
+            containerColor = Color.Transparent
+        ) { padding ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.TopCenter
+            ) {
+                val contentModifier = Modifier.fillMaxWidth().widthIn(max = 760.dp)
+
+                if (materias.isEmpty()) {
+                    Card(
+                        modifier = contentModifier.padding(top = 20.dp),
+                        shape = RoundedCornerShape(24.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                        border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.32f))
                     ) {
-                        Text("No estas inscrito en materias", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onBackground)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text("Tu docente debe inscribirte", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                }
-            } else {
-                LazyColumn(
-                    modifier = contentModifier.padding(top = 12.dp),
-                    contentPadding = PaddingValues(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(materias) { materia ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(metrics.cardRadius),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surface
-                            ),
-                            border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f))
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(24.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Surface(shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                                Icon(
+                                    imageVector = Icons.Filled.School,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(12.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            Text(
+                                text = "No estas inscrito en materias",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                textAlign = TextAlign.Center
+                            )
+                            Text(
+                                text = "Escanea el QR o solicita inscripcion a tu docente.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = contentModifier.padding(top = 12.dp),
+                        contentPadding = PaddingValues(bottom = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        item {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(22.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f)
+                                ),
+                                border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                            ) {
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                    verticalAlignment = Alignment.CenterVertically
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Surface(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.AutoMirrored.Filled.MenuBook,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(8.dp)
-                                        )
-                                    }
-                                    Column(modifier = Modifier.weight(1f)) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                         Text(
-                                            text = "${materia.sigla} - ${materia.grupo}",
-                                            style = MaterialTheme.typography.titleMedium.copy(fontSize = sizes.cardTitle),
+                                            text = "Estas inscrito en ${materias.size} materias",
+                                            style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onBackground
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer
                                         )
                                         Text(
-                                            text = materia.nombre,
-                                            style = MaterialTheme.typography.bodyLarge.copy(fontSize = sizes.cardSubtitle),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            text = "Usa el icono QR para registrar nuevas materias",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
                                         )
                                     }
+                                    Icon(
+                                        imageVector = Icons.Filled.QrCodeScanner,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
                                 }
+                            }
+                        }
 
-                                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
-
-                                Surface(
-                                    color = MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = RoundedCornerShape(12.dp)
-                                ) {
+                        items(materias) { materia ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable {
+                                        materiaSeleccionada = materia
+                                        mostrarMateriaSheet = true
+                                    },
+                                shape = RoundedCornerShape(metrics.cardRadius),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                                ),
+                                border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))
+                            ) {
+                                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            Icons.Filled.CalendarMonth,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Text(
-                                            text = "Periodo ${materia.periodo}",
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                        Surface(
+                                            color = MaterialTheme.colorScheme.primaryContainer,
+                                            shape = RoundedCornerShape(12.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.MenuBook,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.padding(8.dp)
+                                            )
+                                        }
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            Text(
+                                                text = "${materia.sigla} - ${materia.grupo}",
+                                                style = MaterialTheme.typography.titleMedium.copy(fontSize = sizes.cardTitle),
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onBackground
+                                            )
+                                            Text(
+                                                text = materia.nombre,
+                                                style = MaterialTheme.typography.bodyLarge.copy(fontSize = sizes.cardSubtitle),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
+
+                                    Surface(
+                                        color = MaterialTheme.colorScheme.surfaceVariant,
+                                        shape = RoundedCornerShape(12.dp)
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                Icons.Filled.CalendarMonth,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                            Text(
+                                                text = "Periodo ${materia.periodo}",
+                                                style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -168,63 +288,137 @@ fun MateriaEstudianteView(
         }
     }
 
-    if (mostrarEscaner) {
+    if (mostrarMateriaSheet) {
+        val materiaActiva = materiaSeleccionada
         ModalBottomSheet(
-            onDismissRequest = { mostrarEscaner = false },
-            sheetState = scannerSheetState,
-            containerColor = MaterialTheme.colorScheme.surface,
+            onDismissRequest = { mostrarMateriaSheet = false },
+            sheetState = materiaSheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 12.dp)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Surface(
+                    shape = RoundedCornerShape(18.dp),
+                    color = MaterialTheme.colorScheme.primaryContainer
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.MenuBook,
+                        contentDescription = null,
+                        modifier = Modifier.padding(16.dp).size(34.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Text(
+                    text = "Marcar asistencia",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                if (materiaActiva != null) {
+                    Text(
+                        text = materiaActiva.nombre,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                    Text(
+                        text = "${materiaActiva.sigla} - ${materiaActiva.grupo}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
+                    )
+                }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text(
-                        text = "Escanear QR de materia",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                    AppSecondaryButton(
+                        text = "Cerrar",
+                        onClick = { mostrarMateriaSheet = false },
+                        modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = { mostrarEscaner = false }) {
-                        Text("Cerrar")
-                    }
+                    AppPrimaryButton(
+                        text = "Escanear QR",
+                        onClick = {
+                            mostrarMateriaSheet = false
+                            mostrarEscaner = true
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
                 }
+            }
+        }
+    }
+
+    if (mostrarEscaner) {
+        ModalBottomSheet(
+            onDismissRequest = { mostrarEscaner = false },
+            sheetState = scannerSheetState,
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Escanear QR de materia",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "Enfoca el codigo dentro del recuadro",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(460.dp)
-                        .background(Color.Black, RoundedCornerShape(16.dp))
+                        .padding(bottom = 8.dp),
+                    contentAlignment = Alignment.Center
                 ) {
-                    QrScannerView(
-                        modifier = Modifier.fillMaxSize(),
-                        onQrScanned = { payload ->
-                            val error = onRegistrarQr(payload)
-                            if (error == null) {
-                                mostrarEscaner = false
-                                coroutineScope.launch {
-                                    snackbarHostState.showSnackbar("Materia vinculada correctamente")
+                    Box(
+                        modifier = Modifier
+                            .size(300.dp)
+                            .background(Color.Black, RoundedCornerShape(16.dp))
+                    ) {
+                        QrScannerView(
+                            modifier = Modifier.fillMaxSize(),
+                            onQrScanned = { payload ->
+                                val error = onRegistrarQr(payload)
+                                if (error == null) {
+                                    mostrarEscaner = false
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar("Materia vinculada correctamente")
+                                    }
+                                } else {
+                                    coroutineScope.launch {
+                                        snackbarHostState.showSnackbar(error)
+                                    }
                                 }
-                            } else {
+                            },
+                            onError = { error ->
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar(error)
                                 }
                             }
-                        },
-                        onError = { error ->
-                            coroutineScope.launch {
-                                snackbarHostState.showSnackbar(error)
-                            }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
