@@ -4,35 +4,83 @@ import androidx.compose.runtime.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.attendance.controller.DocenteController
-import com.example.attendance.controller.EstudianteController
+import com.example.attendance.controller.AsistenciaDetalleController
+import com.example.attendance.controller.AsistenciaViewController
+import com.example.attendance.controller.EstudianteHomeController
+import com.example.attendance.controller.InscritosViewController
+import com.example.attendance.controller.LoginController
+import com.example.attendance.controller.MateriaDocenteController
 import com.example.attendance.db.AttendanceDatabase
-import com.example.attendance.view.screens.*
+import com.example.attendance.model.AsistenciaModel
+import com.example.attendance.model.DetalleAsistenciaModel
+import com.example.attendance.model.DocenteModel
+import com.example.attendance.model.EstudianteModel
+import com.example.attendance.model.InscritoModel
+import com.example.attendance.model.MateriaModel
+import com.example.attendance.view.*
 import com.example.attendance.view.theme.AttendanceTheme
 
 @Composable
 fun App(db: AttendanceDatabase) {
     val navController = rememberNavController()
-    val docenteController = remember { DocenteController(db) }
-    val estudianteController = remember { EstudianteController(db) }
+
+    val docenteModel = remember { DocenteModel(db) }
+    val estudianteModel = remember { EstudianteModel(db) }
+    val materiaModel = remember { MateriaModel(db) }
+    val inscritoModel = remember { InscritoModel(db) }
+    val asistenciaModel = remember { AsistenciaModel(db) }
+    val detalleAsistenciaModel = remember { DetalleAsistenciaModel(db) }
+
+    val docenteController = remember {
+        MateriaDocenteController(
+            docenteModel = docenteModel,
+            materiaModel = materiaModel
+        )
+    }
+    val estudianteController = remember {
+        EstudianteHomeController(
+            estudianteModel = estudianteModel,
+            materiaModel = materiaModel
+        )
+    }
+    val loginController = remember {
+        LoginController(docenteModel, estudianteModel)
+    }
+    val asistenciaController = remember {
+        AsistenciaViewController(
+            estudianteModel = estudianteModel,
+            asistenciaModel = asistenciaModel,
+            detalleAsistenciaModel = detalleAsistenciaModel
+        )
+    }
+    val asistenciaDetalleController = remember {
+        AsistenciaDetalleController(detalleAsistenciaModel)
+    }
+    val inscritosController = remember {
+        InscritosViewController(estudianteModel, inscritoModel)
+    }
 
     AttendanceTheme {
         NavHost(navController = navController, startDestination = "login") {
 
             composable("login") {
-                LoginScreen(
+                LoginView(
                     onIngresar = { carnet, esDocente ->
-                        if (esDocente) {
-                            docenteController.ingresar(carnet)
-                            navController.navigate("docente_home") {
-                                popUpTo("login") { inclusive = true }
+                        val error = loginController.iniciarSesion(carnet, esDocente)
+                        if (error == null) {
+                            val carnetInt = carnet.toIntOrNull()
+                            if (carnetInt != null) {
+                                if (esDocente) {
+                                    docenteController.cargarDocente(carnetInt)
+                                } else {
+                                    estudianteController.cargarEstudiante(carnetInt)
+                                }
                             }
-                        } else {
-                            estudianteController.ingresar(carnet)
-                            navController.navigate("estudiante_home") {
+                            navController.navigate(if (esDocente) "docente_home" else "estudiante_home") {
                                 popUpTo("login") { inclusive = true }
                             }
                         }
+                        error
                     }
                 )
             }
@@ -41,16 +89,25 @@ fun App(db: AttendanceDatabase) {
                 val docente by docenteController.docente.collectAsState()
                 val materias by docenteController.materias.collectAsState()
 
-                DocenteHomeScreen(
-                    carnet = docente?.carnetIdentidad ?: 0,
+                MateriaDocenteView(
                     materias = materias,
                     onCrearMateria = { sigla, nombre, grupo ->
+                        if (sigla.isBlank() || nombre.isBlank() || grupo.isBlank()) return@MateriaDocenteView false
                         docenteController.crearMateria(sigla, nombre, grupo)
+                        true
                     },
                     onMateriaClick = { materiaId ->
-                        navController.navigate("materia_detalle/$materiaId")
+                        val materiaSeleccionada = materias.find { it.id == materiaId }
+                        if (materiaSeleccionada != null) {
+                            asistenciaController.seleccionarMateria(materiaSeleccionada)
+                            navController.navigate("asistencia")
+                        }
                     },
                     onLogout = {
+                        docenteController.cerrarSesion()
+                        asistenciaController.limpiar()
+                        asistenciaDetalleController.limpiar()
+                        inscritosController.limpiar()
                         navController.navigate("login") {
                             popUpTo("login") { inclusive = true }
                         }
@@ -58,60 +115,76 @@ fun App(db: AttendanceDatabase) {
                 )
             }
 
-            composable("materia_detalle/{materiaId}") { backStackEntry ->
-                val materiaId = backStackEntry.arguments?.getString("materiaId")?.toLongOrNull() ?: return@composable
-                val alumnos by docenteController.alumnos.collectAsState()
-                val asistencias by docenteController.asistencias.collectAsState()
-                val materias by docenteController.materias.collectAsState()
-                val materia = materias.find { it.id == materiaId }
+            composable("asistencia") {
+                val asistencias by asistenciaController.asistencias.collectAsState()
+                val materia by asistenciaController.materiaSeleccionada.collectAsState()
 
-                LaunchedEffect(materiaId) {
-                    docenteController.cargarAlumnos(materiaId)
-                    docenteController.cargarAsistencias(materiaId)
+                if (materia == null) {
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                    return@composable
                 }
+                val materiaActual = materia ?: return@composable
 
-                MateriaDetalleScreen(
-                    materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "",
-                    alumnos = alumnos,
+                AsistenciaView(
+                    materiaNombre = "${materiaActual.sigla} - ${materiaActual.grupo}",
                     asistencias = asistencias,
                     onBack = { navController.popBackStack() },
-                    onAgregarAlumno = { carnet, nombre, apellido ->
-                        docenteController.inscribirAlumno(materiaId, carnet, nombre, apellido)
-                    },
-                    onCargarCSV = { contenido ->
-                        docenteController.cargarAlumnosDesdeCSV(materiaId, contenido)
-                    },
-                    onEliminarAlumno = { estudianteId ->
-                        docenteController.desinscribirAlumno(materiaId, estudianteId)
+                    onInscritosClick = {
+                        inscritosController.seleccionarMateria(materiaActual)
+                        navController.navigate("inscritos")
                     },
                     onIniciarAsistencia = {
-                        val fecha = "2026-04-04" // TODO: usar fecha real
-                        val id = docenteController.crearAsistencia(materiaId, fecha)
-                        navController.navigate("asistencia/$id")
+                        val asistenciaId = asistenciaController.iniciarAsistenciaSeleccionada()
+                        if (asistenciaId != null) {
+                            asistenciaDetalleController.seleccionarAsistencia(asistenciaId)
+                            navController.navigate("asistencia_detalle")
+                        }
                     },
                     onAsistenciaClick = { asistenciaId ->
-                        navController.navigate("asistencia/$asistenciaId")
+                        asistenciaDetalleController.seleccionarAsistencia(asistenciaId)
+                        navController.navigate("asistencia_detalle")
                     }
                 )
             }
 
-            composable("asistencia/{asistenciaId}") { backStackEntry ->
-                val asistenciaId = backStackEntry.arguments?.getString("asistenciaId")?.toLongOrNull() ?: return@composable
-                val detalles by docenteController.detalleAsistencia.collectAsState()
+            composable("inscritos") {
+                val materia by inscritosController.materiaSeleccionada.collectAsState()
+                val inscritos by inscritosController.inscritos.collectAsState()
 
-                LaunchedEffect(asistenciaId) {
-                    docenteController.cargarDetalleAsistencia(asistenciaId)
+                if (materia == null) {
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                    return@composable
                 }
 
-                AsistenciaScreen(
+                val materiaActual = materia ?: return@composable
+
+                InscritosView(
+                    materiaNombre = "${materiaActual.sigla} - ${materiaActual.grupo}",
+                    inscritos = inscritos,
+                    onBack = { navController.popBackStack() },
+                    onAgregarEstudiante = { carnet, nombre, apellido ->
+                        inscritosController.agregarEstudiante(carnet, nombre, apellido)
+                    },
+                    onImportarCsv = { contenido ->
+                        inscritosController.importarDesdeCsv(contenido)
+                    }
+                )
+            }
+
+            composable("asistencia_detalle") {
+                val asistenciaId by asistenciaDetalleController.asistenciaSeleccionadaId.collectAsState()
+                val detalles by asistenciaDetalleController.detalles.collectAsState()
+
+                if (asistenciaId == null) {
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                    return@composable
+                }
+
+                AsistenciaDetalleView(
                     detalles = detalles,
                     onBack = { navController.popBackStack() },
                     onToggleEstado = { estudianteId, estadoActual ->
-                        if (estadoActual == "PRESENTE") {
-                            docenteController.marcarFalta(asistenciaId, estudianteId)
-                        } else {
-                            docenteController.marcarPresente(asistenciaId, estudianteId)
-                        }
+                        asistenciaDetalleController.alternarEstado(estudianteId, estadoActual)
                     }
                 )
             }
@@ -120,10 +193,14 @@ fun App(db: AttendanceDatabase) {
                 val estudiante by estudianteController.estudiante.collectAsState()
                 val materias by estudianteController.materias.collectAsState()
 
-                EstudianteHomeScreen(
+                EstudianteHomeView(
                     carnet = estudiante?.carnetIdentidad ?: 0,
                     materias = materias,
                     onLogout = {
+                        estudianteController.cerrarSesion()
+                        asistenciaController.limpiar()
+                        asistenciaDetalleController.limpiar()
+                        inscritosController.limpiar()
                         navController.navigate("login") {
                             popUpTo("login") { inclusive = true }
                         }

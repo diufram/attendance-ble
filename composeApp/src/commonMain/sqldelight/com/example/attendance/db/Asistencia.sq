@@ -9,6 +9,10 @@ CREATE TABLE asistencia (
  INSERT INTO asistencia(materia_id, fecha)
  VALUES (?, ?);
 
+ insertAsistenciaNow:
+ INSERT INTO asistencia(materia_id, fecha)
+ VALUES (?, date('now'));
+
  getLastInsertId:
  SELECT last_insert_rowid();
 

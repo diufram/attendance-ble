@@ -17,6 +17,14 @@ data class Asistencia(
                 .executeAsOne()
         }
 
+        fun insertarConFechaActual(db: AttendanceDatabase, materiaId: Long): Long {
+            db.asistenciaQueries.insertAsistenciaNow(
+                materia_id = materiaId
+            )
+            return db.asistenciaQueries.getLastInsertId()
+                .executeAsOne()
+        }
+
         fun obtenerPorId(db: AttendanceDatabase, id: Long): Asistencia? {
             return db.asistenciaQueries.getAsistenciaById(id)
                 .executeAsOneOrNull()

@@ -1,4 +1,4 @@
-package com.example.attendance.view.screens
+package com.example.attendance.view
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
@@ -12,11 +12,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 @Composable
-fun LoginScreen(
-    onIngresar: (carnet: Int, esDocente: Boolean) -> Unit
+fun LoginView(
+    onIngresar: (carnet: String, esDocente: Boolean) -> String?
 ) {
     var carnet by remember { mutableStateOf("") }
     var esDocente by remember { mutableStateOf(true) }
@@ -29,93 +28,82 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(32.dp),
+                .padding(horizontal = 24.dp, vertical = 20.dp)
+                .widthIn(max = 460.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo
-            Text(text = "📋", fontSize = 64.sp)
-            Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Asistencia BLE",
+                text = "Attendance",
                 style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
             )
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Sistema de asistencia por Bluetooth",
+                text = "Inicia sesion para continuar",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
+            Spacer(modifier = Modifier.height(28.dp))
 
-            // Selector de rol
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(18.dp),
                 colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
+                ),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(4.dp)
                 ) {
-                    // Botón Docente
-                    Button(
+                    TextButton(
                         onClick = { esDocente = true },
-                        modifier = Modifier.weight(1f).height(48.dp),
+                        modifier = Modifier.weight(1f).height(44.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (esDocente)
-                                MaterialTheme.colorScheme.primary
+                                MaterialTheme.colorScheme.surface
                             else
                                 MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (esDocente)
-                                MaterialTheme.colorScheme.onPrimary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = MaterialTheme.colorScheme.onSurface
                         ),
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = if (esDocente) 4.dp else 0.dp
+                            defaultElevation = 0.dp
                         )
                     ) {
-                        Text("👨‍🏫 Docente", fontWeight = FontWeight.SemiBold)
+                        Text("Docente", fontWeight = FontWeight.Medium)
                     }
 
                     Spacer(modifier = Modifier.width(4.dp))
 
-                    // Botón Estudiante
-                    Button(
+                    TextButton(
                         onClick = { esDocente = false },
-                        modifier = Modifier.weight(1f).height(48.dp),
+                        modifier = Modifier.weight(1f).height(44.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = if (!esDocente)
-                                MaterialTheme.colorScheme.secondary
+                                MaterialTheme.colorScheme.surface
                             else
                                 MaterialTheme.colorScheme.surfaceVariant,
-                            contentColor = if (!esDocente)
-                                MaterialTheme.colorScheme.onSecondary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            contentColor = MaterialTheme.colorScheme.onSurface
                         ),
                         elevation = ButtonDefaults.buttonElevation(
-                            defaultElevation = if (!esDocente) 4.dp else 0.dp
+                            defaultElevation = 0.dp
                         )
                     ) {
-                        Text("🎓 Estudiante", fontWeight = FontWeight.SemiBold)
+                        Text("Estudiante", fontWeight = FontWeight.Medium)
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(18.dp))
 
-            // Input carnet
             OutlinedTextField(
                 value = carnet,
                 onValueChange = {
@@ -126,17 +114,13 @@ fun LoginScreen(
                 placeholder = { Text("Ej: 12345678") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(16.dp),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (esDocente)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.secondary
+                    focusedBorderColor = MaterialTheme.colorScheme.primary
                 )
             )
 
-            // Error
             AnimatedVisibility(visible = error.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -146,31 +130,21 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // Botón ingresar
             Button(
                 onClick = {
-                    val carnetInt = carnet.toIntOrNull()
-                    if (carnetInt == null || carnet.isBlank()) {
-                        error = "Ingresa un carnet válido"
-                        return@Button
-                    }
-                    onIngresar(carnetInt, esDocente)
+                    error = onIngresar(carnet, esDocente) ?: ""
                 },
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+                shape = RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = if (esDocente)
-                        MaterialTheme.colorScheme.primary
-                    else
-                        MaterialTheme.colorScheme.secondary
+                    containerColor = MaterialTheme.colorScheme.primary
                 )
             ) {
                 Text(
                     text = "Ingresar",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Medium
                 )
             }
 
