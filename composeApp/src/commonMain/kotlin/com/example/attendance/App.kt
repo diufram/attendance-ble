@@ -80,6 +80,16 @@ fun App(db: AttendanceDatabase) {
     val inscritoModel = container.inscritoModel
     val detalleAsistenciaModel = container.detalleAsistenciaModel
 
+    fun navigateAndClearStack(route: String) {
+        navController.navigate(route) {
+            popUpTo(navController.graph.id) {
+                inclusive = true
+            }
+            launchSingleTop = true
+            restoreState = false
+        }
+    }
+
     AttendanceTheme {
         NavHost(navController = navController, startDestination = "login") {
 
@@ -90,18 +100,14 @@ fun App(db: AttendanceDatabase) {
                             asistenciaController.limpiar()
                             asistenciaDetalleController.limpiar()
                             inscritosController.limpiar()
-                            navController.navigate("docente_home") {
-                                popUpTo("login") { inclusive = true }
-                            }
+                            navigateAndClearStack("docente_home")
                         }
 
                         override fun onMateriaEstudianteView(carnet: Int) {
                             asistenciaController.limpiar()
                             asistenciaDetalleController.limpiar()
                             inscritosController.limpiar()
-                            navController.navigate("estudiante_home") {
-                                popUpTo("login") { inclusive = true }
-                            }
+                            navigateAndClearStack("estudiante_home")
                         }
                     }
                 }
@@ -126,9 +132,7 @@ fun App(db: AttendanceDatabase) {
                             asistenciaController.limpiar()
                             asistenciaDetalleController.limpiar()
                             inscritosController.limpiar()
-                            navController.navigate("login") {
-                                popUpTo("login") { inclusive = true }
-                            }
+                            navigateAndClearStack("login")
                         }
                     }
                 }
@@ -251,9 +255,7 @@ fun App(db: AttendanceDatabase) {
                             asistenciaController.limpiar()
                             asistenciaDetalleController.limpiar()
                             inscritosController.limpiar()
-                            navController.navigate("login") {
-                                popUpTo("login") { inclusive = true }
-                            }
+                            navigateAndClearStack("login")
                         }
                     }
                 }
