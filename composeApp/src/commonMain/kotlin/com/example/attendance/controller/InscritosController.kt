@@ -1,21 +1,18 @@
 package com.example.attendance.controller
 
+import com.example.attendance.IInscritosView
 import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
 class InscritosController(
     private val estudianteModel: EstudianteModel,
-    private val inscritoModel: InscritoModel
+    private val inscritoModel: InscritoModel,
+    private var view: IInscritosView,
 ) {
-    sealed class NavigationEvent {
-        data object Volver : NavigationEvent()
+    fun setView(view: IInscritosView) {
+        this.view = view
     }
-
-    private val _navigationEvent = MutableStateFlow<NavigationEvent?>(null)
-    val navigationEvent: StateFlow<NavigationEvent?> = _navigationEvent
 
     fun seleccionarMateria(materia: MateriaModel) {
         inscritoModel.setMateriaSeleccionada(materia)
@@ -64,11 +61,8 @@ class InscritosController(
         inscritoModel.limpiarEstadoMateria()
     }
 
-    fun solicitarVolver() {
-        _navigationEvent.value = NavigationEvent.Volver
+    fun volver() {
+        view.irVolver()
     }
 
-    fun limpiarNavegacion() {
-        _navigationEvent.value = null
-    }
 }

@@ -1,5 +1,6 @@
 package com.example.attendance.view
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -7,31 +8,51 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaEstudianteView(
     model: MateriaModel,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    onRegistrarQr: (String) -> String?
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
     val materias by model.materiasEstudiante.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+    val scannerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var mostrarEscaner by remember { mutableStateOf(false) }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Mis materias") },
                 actions = {
+                    IconButton(onClick = { mostrarEscaner = true }) {
+                        Icon(
+                            imageVector = Icons.Filled.QrCodeScanner,
+                            contentDescription = "Escanear QR"
+                        )
+                    }
                     TextButton(onClick = onLogout) { Text("Salir") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -142,6 +163,68 @@ fun MateriaEstudianteView(
                             }
                         }
                     }
+                }
+            }
+        }
+    }
+
+    if (mostrarEscaner) {
+        ModalBottomSheet(
+            onDismissRequest = { mostrarEscaner = false },
+            sheetState = scannerSheetState,
+            containerColor = MaterialTheme.colorScheme.surface,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Escanear QR de materia",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    TextButton(onClick = { mostrarEscaner = false }) {
+                        Text("Cerrar")
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(460.dp)
+                        .background(Color.Black, RoundedCornerShape(16.dp))
+                ) {
+                    QrScannerView(
+                        modifier = Modifier.fillMaxSize(),
+                        onQrScanned = { payload ->
+                            val error = onRegistrarQr(payload)
+                            if (error == null) {
+                                mostrarEscaner = false
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Materia vinculada correctamente")
+                                }
+                            } else {
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar(error)
+                                }
+                            }
+                        },
+                        onError = { error ->
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(error)
+                            }
+                        }
+                    )
                 }
             }
         }

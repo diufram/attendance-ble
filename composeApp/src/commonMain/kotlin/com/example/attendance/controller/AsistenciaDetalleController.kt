@@ -1,18 +1,15 @@
 package com.example.attendance.controller
 
+import com.example.attendance.IAsistenciaDetalleView
 import com.example.attendance.model.DetalleAsistenciaModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
 class AsistenciaDetalleController(
-    private val detalleAsistenciaModel: DetalleAsistenciaModel
+    private val detalleAsistenciaModel: DetalleAsistenciaModel,
+    private var view: IAsistenciaDetalleView,
 ) {
-    sealed class NavigationEvent {
-        data object Volver : NavigationEvent()
+    fun setView(view: IAsistenciaDetalleView) {
+        this.view = view
     }
-
-    private val _navigationEvent = MutableStateFlow<NavigationEvent?>(null)
-    val navigationEvent: StateFlow<NavigationEvent?> = _navigationEvent
 
     fun seleccionarAsistencia(asistenciaId: Long) {
         detalleAsistenciaModel.setAsistenciaSeleccionada(asistenciaId)
@@ -30,11 +27,7 @@ class AsistenciaDetalleController(
         detalleAsistenciaModel.limpiarEstadoAsistencia()
     }
 
-    fun solicitarVolver() {
-        _navigationEvent.value = NavigationEvent.Volver
-    }
-
-    fun limpiarNavegacion() {
-        _navigationEvent.value = null
+    fun volver() {
+        view.irVolver()
     }
 }

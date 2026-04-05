@@ -35,6 +35,35 @@ class InscritoModel(
             }
     }
 
+    fun obtenerPorMateria(materiaId: Long): List<InscritoModel> {
+        val database = requireDb()
+        return database.inscritoQueries.getInscritosByMateria(materiaId)
+            .executeAsList()
+            .map {
+                InscritoModel(
+                    id = it.id,
+                    materiaId = it.materia_id,
+                    estudianteId = it.estudiante_id,
+                    bitMapIndex = it.bitmap_index.toInt(),
+                )
+            }
+    }
+
+    fun construirPayloadQrMateria(materia: MateriaModel): String {
+        val header = listOf(materia.nombre, materia.sigla, materia.grupo, materia.periodo)
+            .joinToString("|")
+
+        val inscritos = obtenerPorMateria(materia.id)
+            .mapNotNull { inscrito ->
+                val estudiante = requireDb().estudianteQueries.getEstudianteById(inscrito.estudianteId)
+                    .executeAsOneOrNull()
+                if (estudiante == null) null else "${estudiante.carnet_identidad}|${inscrito.bitMapIndex}"
+            }
+            .joinToString(";")
+
+        return if (inscritos.isBlank()) header else "$header;$inscritos"
+    }
+
     fun limpiarEstadoMateria() {
         _materiaSeleccionada.value = null
         _inscritosMateria.value = emptyList()
@@ -50,6 +79,28 @@ class InscritoModel(
             estudiante_id = inscrito.estudianteId,
             bitmap_index = nextIndex.toLong()
         )
+    }
+
+    fun guardarInscripcionConBitmap(materiaId: Long, estudianteId: Long, bitmapIndex: Int) {
+        val database = requireDb()
+        val existente = database.inscritoQueries.getInscritoByMateriaEstudiante(materiaId, estudianteId)
+            .executeAsOneOrNull()
+
+        if (existente == null) {
+            database.inscritoQueries.insertInscritoConBitmap(
+                materia_id = materiaId,
+                estudiante_id = estudianteId,
+                bitmap_index = bitmapIndex.toLong()
+            )
+            return
+        }
+
+        if (existente.bitmap_index.toInt() != bitmapIndex) {
+            database.inscritoQueries.updateBitmapIndexById(
+                bitmap_index = bitmapIndex.toLong(),
+                id = existente.id
+            )
+        }
     }
 
     fun obtenerPorId(id: Long): InscritoModel? {

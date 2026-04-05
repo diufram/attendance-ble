@@ -12,6 +12,10 @@ insertInscrito:
 INSERT INTO inscrito(materia_id, estudiante_id, bitmap_index)
 VALUES (?, ?, ?);
 
+insertInscritoConBitmap:
+INSERT INTO inscrito(materia_id, estudiante_id, bitmap_index)
+VALUES (?, ?, ?);
+
 getNextBitmapIndexByMateria:
 SELECT COALESCE(MAX(bitmap_index), -1) + 1
 FROM inscrito
@@ -20,6 +24,9 @@ WHERE materia_id = ?;
 getInscritoById:
 SELECT * FROM inscrito WHERE id = ?;
 
+getInscritoByMateriaEstudiante:
+SELECT * FROM inscrito WHERE materia_id = ? AND estudiante_id = ? LIMIT 1;
+
 getAllInscritos:
 SELECT * FROM inscrito;
 
@@ -27,6 +34,12 @@ getAlumnosByMateria:
 SELECT e.id, e.carnet_identidad, e.nombre, e.apellido
 FROM estudiante e
 INNER JOIN inscrito i ON e.id = i.estudiante_id
+WHERE i.materia_id = ?
+ORDER BY i.bitmap_index ASC;
+
+getInscritosByMateria:
+SELECT i.id, i.materia_id, i.estudiante_id, i.bitmap_index
+FROM inscrito i
 WHERE i.materia_id = ?
 ORDER BY i.bitmap_index ASC;
 
@@ -42,3 +55,6 @@ DELETE FROM inscrito WHERE id = ?;
 
 deleteInscritoByMateriaEstudiante:
 DELETE FROM inscrito WHERE materia_id = ? AND estudiante_id = ?;
+
+updateBitmapIndexById:
+UPDATE inscrito SET bitmap_index = ? WHERE id = ?;

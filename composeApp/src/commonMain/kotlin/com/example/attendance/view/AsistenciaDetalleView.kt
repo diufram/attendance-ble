@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.AsistenciaDetalleController
 import com.example.attendance.model.DetalleAsistenciaModel
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
@@ -48,8 +47,9 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciaDetalleView(
-    controller: AsistenciaDetalleController,
     model: DetalleAsistenciaModel,
+    onVolver: () -> Unit,
+    onAlternarEstado: (Long, String) -> Unit,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
@@ -59,7 +59,7 @@ fun AsistenciaDetalleView(
             TopAppBar(
                 title = { Text("Control de asistencia") },
                 navigationIcon = {
-                    IconButton(onClick = controller::solicitarVolver) {
+                    IconButton(onClick = onVolver) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Atras"
@@ -168,7 +168,7 @@ fun AsistenciaDetalleView(
 
                                 AppSecondaryButton(
                                     text = if (detalle.estado == "PRESENTE") "Marcar falta" else "Marcar presente",
-                                    onClick = { controller.alternarEstado(detalle.estudianteId, detalle.estado) },
+                                    onClick = { onAlternarEstado(detalle.estudianteId, detalle.estado) },
                                     modifier = Modifier.fillMaxWidth()
                                 )
                             }

@@ -1,25 +1,22 @@
 package com.example.attendance.controller
 
+import com.example.attendance.IAsistenciaView
 import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.model.DetalleAsistenciaModel
 import com.example.attendance.model.EstudianteModel
+import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 
 class AsistenciaController(
     private val estudianteModel: EstudianteModel,
     private val asistenciaModel: AsistenciaModel,
-    private val detalleAsistenciaModel: DetalleAsistenciaModel
+    private val detalleAsistenciaModel: DetalleAsistenciaModel,
+    private val inscritoModel: InscritoModel,
+    private var view: IAsistenciaView,
 ) {
-    sealed class NavigationEvent {
-        data object Volver : NavigationEvent()
-        data class IrInscritos(val materia: MateriaModel) : NavigationEvent()
-        data class IrDetalle(val asistenciaId: Long) : NavigationEvent()
+    fun setView(view: IAsistenciaView) {
+        this.view = view
     }
-
-    private val _navigationEvent = MutableStateFlow<NavigationEvent?>(null)
-    val navigationEvent: StateFlow<NavigationEvent?> = _navigationEvent
 
     fun seleccionarMateria(materia: MateriaModel) {
         asistenciaModel.setMateriaSeleccionada(materia)
@@ -34,26 +31,27 @@ class AsistenciaController(
         return asistenciaId
     }
 
-    fun solicitarVolver() {
-        _navigationEvent.value = NavigationEvent.Volver
+    fun volver() {
+        view.irVolver()
     }
 
     fun abrirInscritos() {
         val materia = asistenciaModel.materiaSeleccionada.value ?: return
-        _navigationEvent.value = NavigationEvent.IrInscritos(materia)
+        view.irInscritos(materia)
     }
 
     fun iniciarAsistenciaYAbrirDetalle() {
         val asistenciaId = iniciarAsistenciaSeleccionada() ?: return
-        _navigationEvent.value = NavigationEvent.IrDetalle(asistenciaId)
+        view.irDetalle(asistenciaId)
     }
 
     fun abrirDetalle(asistenciaId: Long) {
-        _navigationEvent.value = NavigationEvent.IrDetalle(asistenciaId)
+        view.irDetalle(asistenciaId)
     }
 
-    fun limpiarNavegacion() {
-        _navigationEvent.value = null
+    fun generarPayloadQrMateria(): String? {
+        val materia = asistenciaModel.materiaSeleccionada.value ?: return null
+        return inscritoModel.construirPayloadQrMateria(materia)
     }
 
     fun limpiar() {

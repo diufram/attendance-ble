@@ -28,6 +28,7 @@ class LoginController(
             materiaModel.setDocenteActual(docente)
             materiaModel.cargarMateriasDocente(carnet)
             materiaModel.limpiarMateriasEstudiante()
+            materiaModel.setEstudianteActualCarnet(null)
         } else {
             var estudiante = estudianteModel.obtenerPorCarnet(carnet)
             if (estudiante == null) {
@@ -36,6 +37,7 @@ class LoginController(
             }
             if (estudiante == null) return "No se pudo iniciar sesion"
             materiaModel.cargarMateriasEstudiante(carnet)
+            materiaModel.setEstudianteActualCarnet(carnet)
             materiaModel.setDocenteActual(null)
             materiaModel.limpiarMateriasDocente()
         }

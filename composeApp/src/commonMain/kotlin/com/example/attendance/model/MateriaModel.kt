@@ -21,9 +21,12 @@ class MateriaModel(
     val materiasDocente: StateFlow<List<MateriaModel>> = _materiasDocente
     private val _materiasEstudiante = MutableStateFlow<List<MateriaModel>>(emptyList())
     val materiasEstudiante: StateFlow<List<MateriaModel>> = _materiasEstudiante
+    private val _estudianteActualCarnet = MutableStateFlow<Int?>(null)
+    val estudianteActualCarnet: StateFlow<Int?> = _estudianteActualCarnet
 
     fun insertar(materia: MateriaModel) {
         val database = requireDb()
+        asegurarDocenteExiste(materia.docenteId, materia.docenteNombre)
         database.materiaQueries.insertMateria(
             sigla = materia.sigla,
             nombre = materia.nombre,
@@ -98,12 +101,17 @@ class MateriaModel(
         _docenteActual.value = null
     }
 
+    fun setEstudianteActualCarnet(carnet: Int?) {
+        _estudianteActualCarnet.value = carnet
+    }
+
     fun cargarMateriasEstudiante(carnet: Int) {
         _materiasEstudiante.value = obtenerPorEstudiante(carnet)
     }
 
     fun limpiarMateriasEstudiante() {
         _materiasEstudiante.value = emptyList()
+        _estudianteActualCarnet.value = null
     }
 
     fun obtenerPorFormacion(sigla: String, grupo: String, periodo: String): MateriaModel? {
@@ -155,5 +163,18 @@ class MateriaModel(
     fun eliminar(id: Long) {
         val database = requireDb()
         database.materiaQueries.deleteMateria(id)
+    }
+
+    private fun asegurarDocenteExiste(carnet: Int, nombre: String) {
+        val database = requireDb()
+        val carnetSeguro = carnet.toLong()
+        val existe = database.docenteQueries.getDocente(carnetSeguro).executeAsOneOrNull() != null
+        if (!existe) {
+            database.docenteQueries.insertDocente(
+                carnet_identidad = carnetSeguro,
+                nombre = nombre,
+                apellido = ""
+            )
+        }
     }
 }

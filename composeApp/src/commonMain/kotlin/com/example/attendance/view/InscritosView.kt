@@ -45,7 +45,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.InscritosController
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
@@ -55,8 +54,10 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InscritosView(
-    controller: InscritosController,
     model: InscritoModel,
+    onVolver: () -> Unit,
+    onAgregarEstudiante: (String, String, String) -> Boolean,
+    onImportarCsv: (String) -> Unit,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
@@ -71,7 +72,7 @@ fun InscritosView(
             TopAppBar(
                 title = { Text("Inscritos - $materiaNombre") },
                 navigationIcon = {
-                    IconButton(onClick = controller::solicitarVolver) {
+                    IconButton(onClick = onVolver) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Atras"
@@ -205,7 +206,7 @@ fun InscritosView(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AppSecondaryButton(text = "Cancelar", onClick = { mostrarDialogoEstudiante = false }, modifier = Modifier.weight(1f))
                     AppPrimaryButton(text = "Guardar", onClick = {
-                        val ok = controller.agregarEstudiante(carnet, nombre, apellido)
+                        val ok = onAgregarEstudiante(carnet, nombre, apellido)
                         if (ok) mostrarDialogoEstudiante = false
                     }, modifier = Modifier.weight(1f))
                 }
@@ -234,7 +235,7 @@ fun InscritosView(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AppSecondaryButton(text = "Cancelar", onClick = { mostrarDialogoCsv = false }, modifier = Modifier.weight(1f))
                     AppPrimaryButton(text = "Importar", onClick = {
-                        controller.importarDesdeCsv(contenido)
+                        onImportarCsv(contenido)
                         mostrarDialogoCsv = false
                     }, modifier = Modifier.weight(1f))
                 }

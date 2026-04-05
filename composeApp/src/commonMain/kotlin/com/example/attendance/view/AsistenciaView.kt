@@ -9,11 +9,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.EventNote
+import androidx.compose.material.icons.filled.QrCode2
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -21,40 +24,67 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.foundation.Canvas
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.AsistenciaController
 import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import qrcode.QRCode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciaView(
-    controller: AsistenciaController,
-    model: AsistenciaModel
+    model: AsistenciaModel,
+    onVolver: () -> Unit,
+    onAbrirInscritos: () -> Unit,
+    onIniciarAsistencia: () -> Unit,
+    onAbrirDetalle: (Long) -> Unit,
+    onGenerarQrPayload: () -> String?,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
     val materia by model.materiaSeleccionada.collectAsState()
     val asistencias by model.asistenciasMateria.collectAsState()
     val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Asistencia"
+    var mostrarQr by remember { mutableStateOf(false) }
+    var qrMatriz by remember { mutableStateOf<List<List<Boolean>>>(emptyList()) }
+    var qrContenido by remember { mutableStateOf("") }
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text(materiaNombre) },
                 navigationIcon = {
-                    IconButton(onClick = controller::solicitarVolver) {
+                    IconButton(onClick = onVolver) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Atras"
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        val payload = onGenerarQrPayload() ?: return@IconButton
+                        qrContenido = payload
+                        qrMatriz = generarQrMatriz(payload)
+                        mostrarQr = true
+                    }) {
+                        Icon(
+                            imageVector = Icons.Filled.QrCode2,
+                            contentDescription = "Generar QR"
                         )
                     }
                 },
@@ -83,10 +113,10 @@ fun AsistenciaView(
             ) {
                 item {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        AppSecondaryButton(text = "Inscritos", onClick = controller::abrirInscritos, modifier = Modifier.weight(1f))
+                        AppSecondaryButton(text = "Inscritos", onClick = onAbrirInscritos, modifier = Modifier.weight(1f))
                         AppPrimaryButton(
                             text = "Iniciar asistencia",
-                            onClick = controller::iniciarAsistenciaYAbrirDetalle,
+                            onClick = onIniciarAsistencia,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -115,7 +145,7 @@ fun AsistenciaView(
                 } else {
                     items(asistencias) { asistencia ->
                         Card(
-                            modifier = Modifier.fillMaxWidth().clickable { controller.abrirDetalle(asistencia.id) },
+                            modifier = Modifier.fillMaxWidth().clickable { onAbrirDetalle(asistencia.id) },
                             shape = RoundedCornerShape(metrics.cardRadius),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f))
@@ -171,4 +201,51 @@ fun AsistenciaView(
             }
         }
     }
+
+    if (mostrarQr) {
+        AlertDialog(
+            onDismissRequest = { mostrarQr = false },
+            title = { Text("Codigo QR de la materia") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (qrMatriz.isNotEmpty()) {
+                        Canvas(modifier = Modifier.fillMaxWidth().height(260.dp)) {
+                            val sizePx = size.minDimension
+                            val count = qrMatriz.size
+                            if (count > 0) {
+                                val cell = sizePx / count.toFloat()
+                                qrMatriz.forEachIndexed { r, row ->
+                                    row.forEachIndexed { c, dark ->
+                                        if (dark) {
+                                            drawRect(
+                                                color = Color.Black,
+                                                topLeft = Offset(c * cell, r * cell),
+                                                size = Size(cell, cell)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        Text("No se pudo generar el QR")
+                    }
+                    Text(
+                        text = qrContenido,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { mostrarQr = false }) { Text("Cerrar") }
+            }
+        )
+    }
+}
+
+private fun generarQrMatriz(payload: String): List<List<Boolean>> {
+    return runCatching {
+        QRCode(payload).rawData.map { row -> row.map { it.dark } }
+    }.getOrElse { emptyList() }
 }
