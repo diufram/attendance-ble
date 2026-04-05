@@ -21,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.LoginController
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AppTextField
@@ -39,18 +37,18 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 
 @Composable
 fun LoginView(
-    controller: LoginController
+    onIniciarSesion: (carnet: String, esDocente: Boolean) -> String?
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
 
     var carnet by remember { mutableStateOf("") }
     var esDocente by remember { mutableStateOf(true) }
-    val error by controller.errorMensaje.collectAsState()
+    var error by remember { mutableStateOf("") }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Column(
             modifier = Modifier
@@ -100,23 +98,23 @@ fun LoginView(
                         if (esDocente) {
                             AppPrimaryButton(
                                 text = "Docente",
-                                onClick = { esDocente = true; controller.limpiarError() },
+                                onClick = { esDocente = true; error = "" },
                                 modifier = Modifier.weight(1f)
                             )
                             AppSecondaryButton(
                                 text = "Estudiante",
-                                onClick = { esDocente = false; controller.limpiarError() },
+                                onClick = { esDocente = false; error = "" },
                                 modifier = Modifier.weight(1f)
                             )
                         } else {
                             AppSecondaryButton(
                                 text = "Docente",
-                                onClick = { esDocente = true; controller.limpiarError() },
+                                onClick = { esDocente = true; error = "" },
                                 modifier = Modifier.weight(1f)
                             )
                             AppPrimaryButton(
                                 text = "Estudiante",
-                                onClick = { esDocente = false; controller.limpiarError() },
+                                onClick = { esDocente = false; error = "" },
                                 modifier = Modifier.weight(1f)
                             )
                         }
@@ -126,15 +124,15 @@ fun LoginView(
                         value = carnet,
                         onValueChange = {
                             carnet = it
-                            controller.limpiarError()
+                            error = ""
                         },
                         label = "Carnet de Identidad",
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    AnimatedVisibility(visible = !error.isNullOrEmpty()) {
+                    AnimatedVisibility(visible = error.isNotEmpty()) {
                         Text(
-                            text = error ?: "",
+                            text = error,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
                             modifier = Modifier.fillMaxWidth()
@@ -143,7 +141,7 @@ fun LoginView(
 
                     AppPrimaryButton(
                         text = "Ingresar",
-                        onClick = { controller.ingresar(carnet, esDocente) },
+                        onClick = { error = onIniciarSesion(carnet, esDocente) ?: "" },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

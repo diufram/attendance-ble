@@ -79,13 +79,13 @@ fun InscritosView(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
                     actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) { padding ->
         Box(
             modifier = Modifier
@@ -187,7 +187,11 @@ fun InscritosView(
         var nombre by remember { mutableStateOf("") }
         var apellido by remember { mutableStateOf("") }
 
-        ModalBottomSheet(onDismissRequest = { mostrarDialogoEstudiante = false }) {
+        ModalBottomSheet(
+            onDismissRequest = { mostrarDialogoEstudiante = false },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onBackground
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -213,7 +217,11 @@ fun InscritosView(
     if (mostrarDialogoCsv) {
         var contenido by remember { mutableStateOf("") }
 
-        ModalBottomSheet(onDismissRequest = { mostrarDialogoCsv = false }) {
+        ModalBottomSheet(
+            onDismissRequest = { mostrarDialogoCsv = false },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onBackground
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()

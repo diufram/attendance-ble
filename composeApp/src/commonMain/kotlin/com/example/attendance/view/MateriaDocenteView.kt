@@ -17,7 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.MateriaDocenteController
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
@@ -27,8 +26,10 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaDocenteView(
-    controller: MateriaDocenteController,
-    model: MateriaModel
+    model: MateriaModel,
+    onLogout: () -> Unit,
+    onMateriaClick: (Long) -> Unit,
+    onCrearMateria: (sigla: String, nombre: String, grupo: String, periodo: String) -> Boolean
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
@@ -44,7 +45,7 @@ fun MateriaDocenteView(
             TopAppBar(
                 title = { Text("Materias") },
                 actions = {
-                    TextButton(onClick = controller::solicitarCerrarSesion) { Text("Salir") }
+                    TextButton(onClick = onLogout) { Text("Salir") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -109,7 +110,7 @@ fun MateriaDocenteView(
                 ) {
                     items(materias) { materia ->
                         Card(
-                            modifier = Modifier.fillMaxWidth().clickable { controller.seleccionarMateria(materia.id) },
+                            modifier = Modifier.fillMaxWidth().clickable { onMateriaClick(materia.id) },
                             shape = RoundedCornerShape(metrics.cardRadius),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                             border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f))
@@ -209,7 +210,11 @@ fun MateriaDocenteView(
     }
 
     if (showDialog) {
-        ModalBottomSheet(onDismissRequest = { showDialog = false }) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog = false },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onBackground
+        ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -253,7 +258,7 @@ fun MateriaDocenteView(
                     AppPrimaryButton(
                         text = "Crear",
                         onClick = {
-                            val creada = controller.crearMateria(sigla, nombre, grupo, periodo)
+                            val creada = onCrearMateria(sigla, nombre, grupo, periodo)
                             if (creada) {
                                 sigla = ""
                                 nombre = ""

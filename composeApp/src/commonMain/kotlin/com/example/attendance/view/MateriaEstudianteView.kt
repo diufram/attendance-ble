@@ -15,34 +15,33 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.attendance.controller.MateriaEstudianteController
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.theme.AttendanceThemeTokens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaEstudianteView(
-    controller: MateriaEstudianteController,
-    model: MateriaModel
+    model: MateriaModel,
+    onLogout: () -> Unit
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
     val materias by model.materiasEstudiante.collectAsState()
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = { Text("Mis materias") },
                 actions = {
-                    TextButton(onClick = controller::solicitarCerrarSesion) { Text("Salir") }
+                    TextButton(onClick = onLogout) { Text("Salir") }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
                     actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) { padding ->
         Box(
             modifier = Modifier

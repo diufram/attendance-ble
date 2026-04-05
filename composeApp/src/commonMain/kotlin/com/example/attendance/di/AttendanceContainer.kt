@@ -6,6 +6,9 @@ import com.example.attendance.controller.InscritosController
 import com.example.attendance.controller.LoginController
 import com.example.attendance.controller.MateriaEstudianteController
 import com.example.attendance.controller.MateriaDocenteController
+import com.example.attendance.EmptyLoginView
+import com.example.attendance.EmptyMateriaDocenteView
+import com.example.attendance.EmptyMateriaEstudianteView
 import com.example.attendance.db.AttendanceDatabase
 import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.model.DetalleAsistenciaModel
@@ -23,16 +26,16 @@ class AttendanceContainer(db: AttendanceDatabase) {
     val detalleAsistenciaModel = DetalleAsistenciaModel(db = db)
 
     val materiaDocenteController = MateriaDocenteController(
-        docenteModel = docenteModel,
         materiaModel = materiaModel,
+        view = EmptyMateriaDocenteView,
     )
 
     val materiaEstudianteController = MateriaEstudianteController(
-        estudianteModel = estudianteModel,
         materiaModel = materiaModel,
+        view = EmptyMateriaEstudianteView,
     )
 
-    val loginController = LoginController(docenteModel, estudianteModel)
+    val loginController = LoginController(docenteModel, estudianteModel, materiaModel, EmptyLoginView)
 
     val asistenciaController = AsistenciaController(
         estudianteModel = estudianteModel,

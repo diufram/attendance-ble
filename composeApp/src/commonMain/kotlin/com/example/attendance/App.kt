@@ -9,6 +9,34 @@ import com.example.attendance.di.AttendanceContainer
 import com.example.attendance.view.*
 import com.example.attendance.view.theme.AttendanceTheme
 
+interface ILoginView {
+    fun onMateriaDocenteView(carnet: Int)
+    fun onMateriaEstudianteView(carnet: Int)
+}
+
+interface IMateriaDocenteView {
+    fun irAsistencia(materia: com.example.attendance.model.MateriaModel)
+    fun irLogin()
+}
+
+interface IMateriaEstudianteView {
+    fun irLogin()
+}
+
+object EmptyLoginView : ILoginView {
+    override fun onMateriaDocenteView(carnet: Int) = Unit
+    override fun onMateriaEstudianteView(carnet: Int) = Unit
+}
+
+object EmptyMateriaDocenteView : IMateriaDocenteView {
+    override fun irAsistencia(materia: com.example.attendance.model.MateriaModel) = Unit
+    override fun irLogin() = Unit
+}
+
+object EmptyMateriaEstudianteView : IMateriaEstudianteView {
+    override fun irLogin() = Unit
+}
+
 @Composable
 fun App(db: AttendanceDatabase) {
     val navController = rememberNavController()
@@ -28,43 +56,45 @@ fun App(db: AttendanceDatabase) {
         NavHost(navController = navController, startDestination = "login") {
 
             composable("login") {
-                val loginEvent by loginController.navigationEvent.collectAsState()
-
-                LaunchedEffect(loginEvent) {
-                    val event = loginEvent ?: return@LaunchedEffect
-                    asistenciaController.limpiar()
-                    asistenciaDetalleController.limpiar()
-                    inscritosController.limpiar()
-
-                    if (event.esDocente) {
-                        docenteController.cargarDocente(event.carnet)
-                        navController.navigate("docente_home") {
-                            popUpTo("login") { inclusive = true }
+                val loginView = remember(navController, asistenciaController, asistenciaDetalleController, inscritosController) {
+                    object : ILoginView {
+                        override fun onMateriaDocenteView(carnet: Int) {
+                            asistenciaController.limpiar()
+                            asistenciaDetalleController.limpiar()
+                            inscritosController.limpiar()
+                            navController.navigate("docente_home") {
+                                popUpTo("login") { inclusive = true }
+                            }
                         }
-                    } else {
-                        materiaEstudianteController.cargarEstudiante(event.carnet)
-                        navController.navigate("estudiante_home") {
-                            popUpTo("login") { inclusive = true }
+
+                        override fun onMateriaEstudianteView(carnet: Int) {
+                            asistenciaController.limpiar()
+                            asistenciaDetalleController.limpiar()
+                            inscritosController.limpiar()
+                            navController.navigate("estudiante_home") {
+                                popUpTo("login") { inclusive = true }
+                            }
                         }
                     }
-                    loginController.limpiarNavegacion()
                 }
 
-                LoginView(controller = loginController)
+                DisposableEffect(loginView) {
+                    loginController.setView(loginView)
+                    onDispose { loginController.setView(EmptyLoginView) }
+                }
+
+                LoginView(onIniciarSesion = loginController::iniciarSesion)
             }
 
             composable("docente_home") {
-                val docenteEvent by docenteController.navigationEvent.collectAsState()
-
-                LaunchedEffect(docenteEvent) {
-                    when (val event = docenteEvent) {
-                        null -> Unit
-                        is com.example.attendance.controller.MateriaDocenteController.NavigationEvent.IrAsistencia -> {
-                            asistenciaController.seleccionarMateria(event.materia)
+                val docenteView = remember(navController, asistenciaController, asistenciaDetalleController, inscritosController) {
+                    object : IMateriaDocenteView {
+                        override fun irAsistencia(materia: com.example.attendance.model.MateriaModel) {
+                            asistenciaController.seleccionarMateria(materia)
                             navController.navigate("asistencia")
                         }
 
-                        com.example.attendance.controller.MateriaDocenteController.NavigationEvent.IrLogin -> {
+                        override fun irLogin() {
                             asistenciaController.limpiar()
                             asistenciaDetalleController.limpiar()
                             inscritosController.limpiar()
@@ -73,10 +103,19 @@ fun App(db: AttendanceDatabase) {
                             }
                         }
                     }
-                    if (docenteEvent != null) docenteController.limpiarNavegacion()
                 }
 
-                MateriaDocenteView(controller = docenteController, model = materiaModel)
+                DisposableEffect(docenteView) {
+                    docenteController.setView(docenteView)
+                    onDispose { docenteController.setView(EmptyMateriaDocenteView) }
+                }
+
+                MateriaDocenteView(
+                    model = materiaModel,
+                    onLogout = docenteController::cerrarSesion,
+                    onMateriaClick = docenteController::seleccionarMateria,
+                    onCrearMateria = docenteController::crearMateria
+                )
             }
 
             composable("asistencia") {
@@ -150,21 +189,28 @@ fun App(db: AttendanceDatabase) {
             }
 
             composable("estudiante_home") {
-                val estudianteEvent by materiaEstudianteController.navigationEvent.collectAsState()
-
-                LaunchedEffect(estudianteEvent) {
-                    if (estudianteEvent is com.example.attendance.controller.MateriaEstudianteController.NavigationEvent.IrLogin) {
-                        asistenciaController.limpiar()
-                        asistenciaDetalleController.limpiar()
-                        inscritosController.limpiar()
-                        navController.navigate("login") {
-                            popUpTo("login") { inclusive = true }
+                val estudianteView = remember(navController, asistenciaController, asistenciaDetalleController, inscritosController) {
+                    object : IMateriaEstudianteView {
+                        override fun irLogin() {
+                            asistenciaController.limpiar()
+                            asistenciaDetalleController.limpiar()
+                            inscritosController.limpiar()
+                            navController.navigate("login") {
+                                popUpTo("login") { inclusive = true }
+                            }
                         }
-                        materiaEstudianteController.limpiarNavegacion()
                     }
                 }
 
-                MateriaEstudianteView(controller = materiaEstudianteController, model = materiaModel)
+                DisposableEffect(estudianteView) {
+                    materiaEstudianteController.setView(estudianteView)
+                    onDispose { materiaEstudianteController.setView(EmptyMateriaEstudianteView) }
+                }
+
+                MateriaEstudianteView(
+                    model = materiaModel,
+                    onLogout = materiaEstudianteController::cerrarSesion
+                )
             }
         }
     }

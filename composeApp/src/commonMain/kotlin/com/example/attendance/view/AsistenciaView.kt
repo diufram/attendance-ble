@@ -59,13 +59,13 @@ fun AsistenciaView(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
                     titleContentColor = MaterialTheme.colorScheme.onBackground,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         },
-        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+        containerColor = MaterialTheme.colorScheme.surfaceVariant
     ) { padding ->
         Box(
             modifier = Modifier

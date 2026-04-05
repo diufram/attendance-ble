@@ -15,6 +15,8 @@ class MateriaModel(
     private val db: AttendanceDatabase? = null
 ) {
     private fun requireDb(): AttendanceDatabase = db ?: error("MateriaModel sin db")
+    private val _docenteActual = MutableStateFlow<DocenteModel?>(null)
+    val docenteActual: StateFlow<DocenteModel?> = _docenteActual
     private val _materiasDocente = MutableStateFlow<List<MateriaModel>>(emptyList())
     val materiasDocente: StateFlow<List<MateriaModel>> = _materiasDocente
     private val _materiasEstudiante = MutableStateFlow<List<MateriaModel>>(emptyList())
@@ -87,8 +89,13 @@ class MateriaModel(
         _materiasDocente.value = obtenerPorDocente(docenteId)
     }
 
+    fun setDocenteActual(docente: DocenteModel?) {
+        _docenteActual.value = docente
+    }
+
     fun limpiarMateriasDocente() {
         _materiasDocente.value = emptyList()
+        _docenteActual.value = null
     }
 
     fun cargarMateriasEstudiante(carnet: Int) {
