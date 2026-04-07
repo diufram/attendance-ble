@@ -9,7 +9,7 @@ actual class DriverFactory(private val context: Context) {
         return AndroidSqliteDriver(
             AttendanceDatabase.Schema,
             context,
-            "attendance_v2.db"
+            "attendance_v3.db"
         )
     }
 }

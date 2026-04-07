@@ -1,5 +1,6 @@
 CREATE TABLE docente (
-    carnet_identidad INTEGER NOT NULL PRIMARY KEY,
+    id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    carnet_identidad INTEGER NOT NULL UNIQUE,
     nombre TEXT NOT NULL,
     apellido TEXT NOT NULL
 );
@@ -8,15 +9,21 @@ insertDocente:
 INSERT INTO docente(carnet_identidad, nombre, apellido)
 VALUES (?, ?, ?);
 
-getDocente:
-SELECT * FROM docente WHERE carnet_identidad = ?;
+getLastInsertId:
+SELECT last_insert_rowid();
+
+getDocenteById:
+SELECT * FROM docente WHERE id = ?;
+
+getDocenteByCarnet:
+SELECT * FROM docente WHERE carnet_identidad = ? LIMIT 1;
 
 getAllDocentes:
 SELECT * FROM docente;
 
 updateDocente:
 UPDATE docente SET nombre = ?, apellido = ?
-WHERE carnet_identidad = ?;
+WHERE id = ?;
 
 deleteDocente:
-DELETE FROM docente WHERE carnet_identidad = ?;
+DELETE FROM docente WHERE id = ?;

@@ -16,10 +16,14 @@ SELECT * FROM detalle_asistencia WHERE id = ?;
 
 getDetalleByAsistencia:
 SELECT da.id, da.asistencia_id, da.estudiante_id, da.estado,
-       e.carnet_identidad, e.nombre, e.apellido
+       e.carnet_identidad, e.nombre, e.apellido,
+       i.bitmap_index
 FROM detalle_asistencia da
 INNER JOIN estudiante e ON da.estudiante_id = e.id
-WHERE da.asistencia_id = ?;
+INNER JOIN asistencia a ON da.asistencia_id = a.id
+LEFT JOIN inscrito i ON i.materia_id = a.materia_id AND i.estudiante_id = da.estudiante_id
+WHERE da.asistencia_id = ?
+ORDER BY i.bitmap_index ASC, da.id ASC;
 
 updateEstado:
 UPDATE detalle_asistencia SET estado = ?

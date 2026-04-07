@@ -22,8 +22,22 @@ class InscritoModel(
     }
 
     fun cargarInscritosMateria(materiaId: Long) {
+        println("[InscritoModel.cargarInscritosMateria] Cargando inscritos para materia: $materiaId")
         val database = requireDb()
-        _inscritosMateria.value = database.inscritoQueries.getAlumnosByMateria(materiaId)
+
+        // Verificar cuántos estudiantes hay en total
+        val totalEstudiantes = database.estudianteQueries.getAllEstudiantes().executeAsList().size
+        println("[InscritoModel.cargarInscritosMateria] Total estudiantes en BD: $totalEstudiantes")
+
+        // Verificar cuántas inscripciones hay para esta materia
+        val inscripciones = database.inscritoQueries.getInscritosByMateria(materiaId).executeAsList()
+        println("[InscritoModel.cargarInscritosMateria] Total inscripciones para materia $materiaId: ${inscripciones.size}")
+        inscripciones.forEachIndexed { i, insc ->
+            println("  Inscripción[$i]: id=${insc.id}, estudiante_id=${insc.estudiante_id}, bitmap_index=${insc.bitmap_index}")
+        }
+
+        // Ahora ejecutar la query con JOIN
+        val lista = database.inscritoQueries.getAlumnosByMateria(materiaId)
             .executeAsList()
             .map {
                 EstudianteModel(
@@ -33,6 +47,11 @@ class InscritoModel(
                     apellido = it.apellido
                 )
             }
+        println("[InscritoModel.cargarInscritosMateria] Resultado JOIN (inscritos cargados): ${lista.size} estudiantes")
+        lista.forEachIndexed { index, est ->
+            println("  [$index] ID:${est.id}, Carnet:${est.carnetIdentidad}, Nombre:'${est.nombre} ${est.apellido}'")
+        }
+        _inscritosMateria.value = lista
     }
 
     fun obtenerPorMateria(materiaId: Long): List<InscritoModel> {
@@ -70,15 +89,64 @@ class InscritoModel(
     }
 
     fun insertar(inscrito: InscritoModel) {
+        println("[InscritoModel.insertar] Iniciando inserción de inscripción...")
+        println("[InscritoModel.insertar] materiaId=${inscrito.materiaId}, estudianteId=${inscrito.estudianteId}")
+
         val database = requireDb()
+
+        println("[InscritoModel.insertar] Verificando si ya existe inscripción...")
+        val existente = database.inscritoQueries.getInscritoByMateriaEstudiante(
+            materia_id = inscrito.materiaId,
+            estudiante_id = inscrito.estudianteId
+        ).executeAsOneOrNull()
+
+        if (existente != null) {
+            println("[InscritoModel.insertar] Ya existe inscripción, ID: ${existente.id}, bitmap_index: ${existente.bitmap_index}")
+            return
+        }
+        println("[InscritoModel.insertar] No existe inscripción previa")
+
+        println("[InscritoModel.insertar] Obteniendo siguiente bitmap_index...")
         val nextIndex = database.inscritoQueries.getNextBitmapIndexByMateria(inscrito.materiaId)
             .executeAsOne()
             .toInt()
-        database.inscritoQueries.insertInscrito(
-            materia_id = inscrito.materiaId,
-            estudiante_id = inscrito.estudianteId,
-            bitmap_index = nextIndex.toLong()
-        )
+        println("[InscritoModel.insertar] Siguiente bitmap_index: $nextIndex")
+
+        try {
+            database.inscritoQueries.transaction {
+                println("[InscritoModel.insertar] Iniciando transacción de inscripción...")
+
+                database.inscritoQueries.insertInscrito(
+                    materia_id = inscrito.materiaId,
+                    estudiante_id = inscrito.estudianteId,
+                    bitmap_index = nextIndex.toLong()
+                )
+                println("[InscritoModel.insertar] INSERT de inscripción ejecutado")
+
+                // Verificar que se insertó
+                val verificacion = database.inscritoQueries.getInscritoByMateriaEstudiante(
+                    materia_id = inscrito.materiaId,
+                    estudiante_id = inscrito.estudianteId
+                ).executeAsOneOrNull()
+
+                if (verificacion == null) {
+                    println("[InscritoModel.insertar] ERROR: No se encuentra la inscripción después del INSERT")
+                    throw IllegalStateException("La inscripción no se insertó correctamente")
+                }
+                println("[InscritoModel.insertar] Verificación: Inscripción encontrada ID=${verificacion.id}, bitmap_index=${verificacion.bitmap_index}")
+                println("[InscritoModel.insertar] Inscripción insertada exitosamente con bitmap_index=$nextIndex")
+            }
+        } catch (e: Exception) {
+            println("[InscritoModel.insertar] ERROR al insertar: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
+    }
+
+    fun existeInscripcion(materiaId: Long, estudianteId: Long): Boolean {
+        val database = requireDb()
+        return database.inscritoQueries.getInscritoByMateriaEstudiante(materiaId, estudianteId)
+            .executeAsOneOrNull() != null
     }
 
     fun guardarInscripcionConBitmap(materiaId: Long, estudianteId: Long, bitmapIndex: Int) {

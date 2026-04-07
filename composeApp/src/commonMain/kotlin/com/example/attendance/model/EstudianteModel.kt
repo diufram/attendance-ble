@@ -13,12 +13,30 @@ class EstudianteModel(
 
     fun insertar(estudiante: EstudianteModel): Long {
         val database = requireDb()
-        database.estudianteQueries.insertEstudiante(
-            carnet_identidad = estudiante.carnetIdentidad.toLong(),
-            nombre = estudiante.nombre,
-            apellido = estudiante.apellido
-        )
-        return database.estudianteQueries.getLastInsertId().executeAsOne()
+
+        return try {
+            database.estudianteQueries.transactionWithResult {
+                database.estudianteQueries.insertEstudiante(
+                    carnet_identidad = estudiante.carnetIdentidad.toLong(),
+                    nombre = estudiante.nombre,
+                    apellido = estudiante.apellido
+                )
+
+                val id = database.estudianteQueries.getLastInsertId().executeAsOne()
+
+                if (id == 0L) {
+                    throw IllegalStateException("El INSERT no generó un ID válido")
+                }
+
+                val verificacion = database.estudianteQueries.getEstudianteById(id).executeAsOneOrNull()
+                if (verificacion == null) {
+                    throw IllegalStateException("El estudiante no se insertó correctamente")
+                }
+                id
+            }
+        } catch (e: Exception) {
+            throw e
+        }
     }
 
     fun obtenerPorId(id: Long): EstudianteModel? {
@@ -65,16 +83,19 @@ class EstudianteModel(
 
     fun obtenerPorMateria(materiaId: Long): List<EstudianteModel> {
         val database = requireDb()
-        return database.inscritoQueries.getAlumnosByMateria(materiaId)
+
+        val resultados = database.inscritoQueries.getAlumnosByMateria(materiaId)
             .executeAsList()
-            .map {
-                EstudianteModel(
-                    id = it.id,
-                    carnetIdentidad = it.carnet_identidad.toInt(),
-                    nombre = it.nombre,
-                    apellido = it.apellido
-                )
-            }
+
+        val lista = resultados.map {
+            EstudianteModel(
+                id = it.id,
+                carnetIdentidad = it.carnet_identidad.toInt(),
+                nombre = it.nombre,
+                apellido = it.apellido
+            )
+        }
+        return lista
     }
 
     fun actualizar(estudiante: EstudianteModel) {

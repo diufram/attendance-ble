@@ -153,140 +153,150 @@ fun AsistenciaView(
                 contentAlignment = Alignment.TopCenter
             ) {
                 val contentModifier = Modifier.fillMaxWidth().widthIn(max = 760.dp)
-
-                LazyColumn(
-                    modifier = contentModifier,
-                    contentPadding = PaddingValues(top = 12.dp, bottom = 24.dp),
+                Column(
+                    modifier = contentModifier
+                        .fillMaxSize()
+                        .padding(top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    item {
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                            AppSecondaryButton(text = "Inscritos", onClick = onAbrirInscritos, modifier = Modifier.weight(1f))
-                            AppPrimaryButton(
-                                text = "Iniciar asistencia",
-                                onClick = onIniciarAsistencia,
-                                modifier = Modifier.weight(1f)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                        AppSecondaryButton(text = "Inscritos", onClick = onAbrirInscritos, modifier = Modifier.weight(1f))
+                        AppPrimaryButton(
+                            text = "Iniciar asistencia",
+                            onClick = onIniciarAsistencia,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(22.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.74f)
+                        ),
+                        border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = "${asistencias.size} sesiones registradas",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                                Text(
+                                    text = "Genera QR para una sesion en vivo",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
+                                )
+                            }
+                            Icon(
+                                imageVector = Icons.Filled.TaskAlt,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
                     }
 
-                    item {
+                    Text(
+                        text = "Asistencias",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    if (asistencias.isEmpty()) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(22.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.74f)
-                            ),
-                            border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                            shape = RoundedCornerShape(24.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                            border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.32f))
                         ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(14.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.SpaceBetween
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                                    Text(
-                                        text = "${asistencias.size} sesiones registradas",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                                    Text(
-                                        text = "Genera QR para una sesion en vivo",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
-                                    )
-                                }
                                 Icon(
-                                    imageVector = Icons.Filled.TaskAlt,
+                                    imageVector = Icons.Filled.Groups,
                                     contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = "Sin asistencias registradas",
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
-                    }
-
-                    item {
-                        Text("Asistencias", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-
-                    if (asistencias.isEmpty()) {
-                        item {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(24.dp),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
-                                border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.32f))
-                            ) {
-                                Column(
-                                    modifier = Modifier.fillMaxWidth().padding(20.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally,
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Groups,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                        text = "Sin asistencias registradas",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                            }
-                        }
                     } else {
-                        items(asistencias) { asistencia ->
-                            Card(
-                                modifier = Modifier.fillMaxWidth().clickable { onAbrirDetalle(asistencia.id) },
-                                shape = RoundedCornerShape(metrics.cardRadius),
-                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
-                                border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))
-                            ) {
-                                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Surface(
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            shape = RoundedCornerShape(12.dp)
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(asistencias) { asistencia ->
+                                Card(
+                                    modifier = Modifier.fillMaxWidth().clickable { onAbrirDetalle(asistencia.id) },
+                                    shape = RoundedCornerShape(metrics.cardRadius),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
+                                    border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))
+                                ) {
+                                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Icon(
-                                                Icons.AutoMirrored.Filled.EventNote,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.primary,
-                                                modifier = Modifier.padding(8.dp)
-                                            )
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.primaryContainer,
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Icon(
+                                                    Icons.AutoMirrored.Filled.EventNote,
+                                                    contentDescription = null,
+                                                    tint = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.padding(8.dp)
+                                                )
+                                            }
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = "Asistencia #${asistencia.id}",
+                                                    style = MaterialTheme.typography.titleSmall.copy(fontSize = sizes.cardTitle),
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = MaterialTheme.colorScheme.onSurface
+                                                )
+                                                Text(
+                                                    text = asistencia.fecha,
+                                                    style = MaterialTheme.typography.bodyMedium.copy(fontSize = sizes.cardSubtitle),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
                                         }
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Text(
-                                                text = "Asistencia #${asistencia.id}",
-                                                style = MaterialTheme.typography.titleMedium.copy(fontSize = sizes.cardTitle),
-                                                fontWeight = FontWeight.SemiBold
-                                            )
-                                            Text(
-                                                text = asistencia.fecha,
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontSize = sizes.cardSubtitle),
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+
+                                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
+
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.End
+                                        ) {
+                                            Surface(
+                                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Text(
+                                                    text = "Tap para ver detalle",
+                                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
+                                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
                                         }
-                                    }
-
-                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))
-
-                                    Surface(
-                                        color = MaterialTheme.colorScheme.surfaceVariant,
-                                        shape = RoundedCornerShape(12.dp)
-                                    ) {
-                                        Text(
-                                            text = "Tap para ver detalle",
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                                            style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
                                     }
                                 }
                             }
@@ -320,19 +330,26 @@ fun AsistenciaView(
 
                 if (qrMatriz.isNotEmpty()) {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        Canvas(modifier = Modifier.size(260.dp)) {
-                            val sizePx = size.minDimension
-                            val count = qrMatriz.size
-                            if (count > 0) {
-                                val cell = sizePx / count.toFloat()
-                                qrMatriz.forEachIndexed { r, row ->
-                                    row.forEachIndexed { c, dark ->
-                                        if (dark) {
-                                            drawRect(
-                                                color = Color.Black,
-                                                topLeft = Offset(c * cell, r * cell),
-                                                size = Size(cell, cell)
-                                            )
+                        Surface(
+                            color = Color.White,
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Box(modifier = Modifier.padding(10.dp)) {
+                                Canvas(modifier = Modifier.size(250.dp)) {
+                                    val sizePx = size.minDimension
+                                    val count = qrMatriz.size
+                                    if (count > 0) {
+                                        val cell = sizePx / count.toFloat()
+                                        qrMatriz.forEachIndexed { r, row ->
+                                            row.forEachIndexed { c, dark ->
+                                                if (dark) {
+                                                    drawRect(
+                                                        color = Color.Black,
+                                                        topLeft = Offset(c * cell, r * cell),
+                                                        size = Size(cell, cell)
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }

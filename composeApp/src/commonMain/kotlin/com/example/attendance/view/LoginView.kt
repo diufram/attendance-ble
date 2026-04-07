@@ -49,210 +49,225 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 fun LoginView(
     onIniciarSesion: (carnet: String, esDocente: Boolean) -> String?
 ) {
-    val metrics = AttendanceThemeTokens.metrics
-    val sizes = AttendanceThemeTokens.textSizes
+        val metrics = AttendanceThemeTokens.metrics
+        val sizes = AttendanceThemeTokens.textSizes
 
-    var carnet by remember { mutableStateOf("") }
-    var esDocente by remember { mutableStateOf(true) }
-    var error by remember { mutableStateOf("") }
+        var carnet by remember { mutableStateOf("") }
+        var esDocente by remember { mutableStateOf(true) }
+        var error by remember { mutableStateOf("") }
+        var submitting by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
-                            MaterialTheme.colorScheme.surfaceVariant,
-                            MaterialTheme.colorScheme.background
-                        )
-                    )
-                )
-        )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(x = (-80).dp, y = (-64).dp)
-                .size(240.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f))
-        )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .offset(x = 84.dp, y = 88.dp)
-                .size(260.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.11f))
-        )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .navigationBarsPadding()
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 20.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Card(
+        Box(modifier = Modifier.fillMaxSize()) {
+            Box(
                 modifier = Modifier
-                    .widthIn(max = 420.dp)
-                    .fillMaxWidth(),
-                shape = RoundedCornerShape(28.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-                ),
-                border = BorderStroke(
-                    metrics.thinBorder,
-                    MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
-                )
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+                                MaterialTheme.colorScheme.surfaceVariant,
+                                MaterialTheme.colorScheme.background
+                            )
+                        )
+                    )
+            )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = (-80).dp, y = (-64).dp)
+                    .size(240.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.13f))
+            )
+
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = 84.dp, y = 88.dp)
+                    .size(260.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.tertiary.copy(alpha = 0.11f))
+            )
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp, vertical = 20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Column(
+                Card(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 22.dp, vertical = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .widthIn(max = 420.dp)
+                        .fillMaxWidth(),
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                    ),
+                    border = BorderStroke(
+                        metrics.thinBorder,
+                        MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
+                    )
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        border = BorderStroke(
-                            metrics.thinBorder,
-                            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                        )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 22.dp, vertical = 24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.Badge,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(12.dp)
-                        )
-                    }
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            border = BorderStroke(
+                                metrics.thinBorder,
+                                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                            )
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Badge,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        }
 
-                    Text(
-                        text = "Attendance Control",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    Text(
-                        text = "Inicia sesion para registrar y gestionar asistencia.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        LoginRolePill(
-                            label = "Docente",
-                            selected = esDocente,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                esDocente = true
-                                error = ""
-                            }
-                        )
-                        LoginRolePill(
-                            label = "Estudiante",
-                            selected = !esDocente,
-                            modifier = Modifier.weight(1f),
-                            onClick = {
-                                esDocente = false
-                                error = ""
-                            }
-                        )
-                    }
-
-                    AppTextField(
-                        value = carnet,
-                        onValueChange = {
-                            carnet = it.filter(Char::isDigit)
-                            error = ""
-                        },
-                        label = "Carnet de Identidad",
-                        leadingIcon = Icons.Filled.Badge,
-                        keyboardType = KeyboardType.Number,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    AnimatedVisibility(visible = error.isNotEmpty()) {
                         Text(
-                            text = error,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
+                            text = "Attendance Control",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+
+                        Text(
+                            text = "Inicia sesion para registrar y gestionar asistencia.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            LoginRolePill(
+                                label = "Docente",
+                                selected = esDocente,
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    if (submitting) return@LoginRolePill
+                                    esDocente = true
+                                    error = ""
+                                }
+                            )
+                            LoginRolePill(
+                                label = "Estudiante",
+                                selected = !esDocente,
+                                modifier = Modifier.weight(1f),
+                                onClick = {
+                                    if (submitting) return@LoginRolePill
+                                    esDocente = false
+                                    error = ""
+                                }
+                            )
+                        }
+
+                        AppTextField(
+                            value = carnet,
+                            onValueChange = {
+                                if (submitting) return@AppTextField
+                                carnet = it.filter(Char::isDigit)
+                                error = ""
+                            },
+                            label = "Carnet de Identidad",
+                            leadingIcon = Icons.Filled.Badge,
+                            keyboardType = KeyboardType.Number,
                             modifier = Modifier.fillMaxWidth()
                         )
+
+                        AnimatedVisibility(visible = error.isNotEmpty()) {
+                            Text(
+                                text = error,
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+
+                        AppPrimaryButton(
+                            text = "Ingresar",
+                            onClick = {
+                                if (submitting) return@AppPrimaryButton
+                                submitting = true
+                                val result = onIniciarSesion(carnet, esDocente)
+                                if (result == null) {
+                                    error = ""
+                                } else {
+                                    error = result
+                                    submitting = false
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !submitting
+                        )
+
+                        Text(
+                            text = if (esDocente)
+                                "Se creara tu perfil docente si no existe"
+                            else
+                                "Se creara tu perfil estudiante si no existe",
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
                     }
-
-                    AppPrimaryButton(
-                        text = "Ingresar",
-                        onClick = { error = onIniciarSesion(carnet, esDocente) ?: "" },
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    Text(
-                        text = if (esDocente)
-                            "Se creara tu perfil docente si no existe"
-                        else
-                            "Se creara tu perfil estudiante si no existe",
-                        style = MaterialTheme.typography.bodySmall.copy(fontSize = sizes.helperText),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center
-                    )
                 }
             }
         }
     }
-}
 
 @Composable
 private fun LoginRolePill(
-    label: String,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    val metrics = AttendanceThemeTokens.metrics
-
-    Surface(
-        modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(14.dp),
-        color = if (selected) {
-            MaterialTheme.colorScheme.primary
-        } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
-        },
-        border = BorderStroke(
-            metrics.thinBorder,
-            if (selected) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
-            } else {
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
-            }
-        )
+        label: String,
+        selected: Boolean,
+        modifier: Modifier = Modifier,
+        onClick: () -> Unit
     ) {
-        Text(
-            text = label,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp),
+        val metrics = AttendanceThemeTokens.metrics
+
+        Surface(
+            modifier = modifier.clickable(onClick = onClick),
+            shape = RoundedCornerShape(14.dp),
             color = if (selected) {
-                MaterialTheme.colorScheme.onPrimary
+                MaterialTheme.colorScheme.primary
             } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
             },
-            textAlign = TextAlign.Center,
-            style = MaterialTheme.typography.labelLarge
-        )
-    }
+            border = BorderStroke(
+                metrics.thinBorder,
+                if (selected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.75f)
+                } else {
+                    MaterialTheme.colorScheme.outline.copy(alpha = 0.35f)
+                }
+            )
+        ) {
+            Text(
+                text = label,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 12.dp),
+                color = if (selected) {
+                    MaterialTheme.colorScheme.onPrimary
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelLarge
+            )
+        }
 }

@@ -9,6 +9,8 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
+import androidx.camera.view.PreviewView.ImplementationMode
+import androidx.camera.view.PreviewView.ScaleType
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -86,6 +88,9 @@ actual fun QrScannerView(
         modifier = modifier,
         factory = { viewContext ->
             val previewView = PreviewView(viewContext)
+            previewView.implementationMode = ImplementationMode.COMPATIBLE
+            previewView.scaleType = ScaleType.FIT_CENTER
+            previewView.setBackgroundColor(android.graphics.Color.BLACK)
             val cameraExecutor = ContextCompat.getMainExecutor(viewContext)
             val cameraProviderFuture = ProcessCameraProvider.getInstance(viewContext)
 

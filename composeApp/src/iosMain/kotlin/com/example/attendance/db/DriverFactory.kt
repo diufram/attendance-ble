@@ -7,7 +7,7 @@ actual class DriverFactory {
     actual fun createDriver(): SqlDriver {
         return NativeSqliteDriver(
             AttendanceDatabase.Schema,
-            "attendance_v2.db"
+            "attendance_v3.db"
         )
     }
 }

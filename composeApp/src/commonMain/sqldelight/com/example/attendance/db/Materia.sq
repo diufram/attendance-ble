@@ -4,16 +4,14 @@ CREATE TABLE materia (
     nombre TEXT NOT NULL,
     grupo TEXT NOT NULL,
     periodo TEXT NOT NULL,
-    docente_nombre TEXT NOT NULL,
-    docente_id INTEGER NOT NULL,
-    bitmap_index_estudiante INTEGER,
+    docente_id INTEGER,
     UNIQUE(sigla, grupo, periodo),
-    FOREIGN KEY (docente_id) REFERENCES docente(carnet_identidad)
+    FOREIGN KEY (docente_id) REFERENCES docente(id)
 );
 
 insertMateria:
-INSERT INTO materia(sigla, nombre, grupo, periodo, docente_nombre, docente_id, bitmap_index_estudiante)
-VALUES (?, ?, ?, ?, ?, ?, ?);
+INSERT INTO materia(sigla, nombre, grupo, periodo, docente_id)
+VALUES (?, ?, ?, ?, ?);
 
 getMateriaById:
 SELECT * FROM materia WHERE id = ?;
@@ -28,12 +26,7 @@ getMateriaByFormacion:
 SELECT * FROM materia WHERE sigla = ? AND grupo = ? AND periodo = ?;
 
 updateMateria:
-UPDATE materia SET sigla = ?, nombre = ?, grupo = ?, periodo = ?, docente_nombre = ?
-WHERE id = ?;
-
-updateBitmapIndexEstudiante:
-UPDATE materia
-SET bitmap_index_estudiante = ?
+UPDATE materia SET sigla = ?, nombre = ?, grupo = ?, periodo = ?
 WHERE id = ?;
 
 deleteMateria:

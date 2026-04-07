@@ -6,6 +6,12 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>La camara se usa para escanear el QR de materia.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Bluetooth se usa para emitir y escanear asistencia BLE.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Bluetooth se usa para emitir y escanear asistencia BLE.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>La ubicacion se usa para habilitar escaneo BLE durante la asistencia.</string>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

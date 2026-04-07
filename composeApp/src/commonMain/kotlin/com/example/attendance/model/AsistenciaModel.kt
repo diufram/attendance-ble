@@ -39,9 +39,32 @@ class AsistenciaModel(
     }
 
     fun insertarConFechaActual(materiaId: Long): Long {
+        println("[AsistenciaModel.insertarConFechaActual] Insertando asistencia para materia: $materiaId")
         val database = requireDb()
-        database.asistenciaQueries.insertAsistenciaNow(materia_id = materiaId)
-        return database.asistenciaQueries.getLastInsertId().executeAsOne()
+
+        return try {
+            database.asistenciaQueries.transactionWithResult {
+                println("[AsistenciaModel.insertarConFechaActual] Iniciando transacción...")
+
+                database.asistenciaQueries.insertAsistenciaNow(materia_id = materiaId)
+                println("[AsistenciaModel.insertarConFechaActual] INSERT ejecutado")
+
+                val id = database.asistenciaQueries.getLastInsertId().executeAsOne()
+                println("[AsistenciaModel.insertarConFechaActual] ID retornado: $id")
+
+                if (id == 0L) {
+                    println("[AsistenciaModel.insertarConFechaActual] ERROR: ID retornado es 0")
+                    throw IllegalStateException("El INSERT no generó un ID válido")
+                }
+
+                println("[AsistenciaModel.insertarConFechaActual] Transacción completada")
+                id
+            }
+        } catch (e: Exception) {
+            println("[AsistenciaModel.insertarConFechaActual] ERROR: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
     }
 
     fun obtenerPorId(id: Long): AsistenciaModel? {

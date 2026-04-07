@@ -3,6 +3,7 @@ package com.example.attendance.model
 import com.example.attendance.db.AttendanceDatabase
 
 class DocenteModel(
+    val id: Long = 0,
     val carnetIdentidad: Int = 0,
     val nombre: String = "",
     val apellido: String = "",
@@ -10,21 +11,37 @@ class DocenteModel(
 ) {
     private fun requireDb(): AttendanceDatabase = db ?: error("DocenteModel sin db")
 
-    fun insertar(docente: DocenteModel) {
+    fun insertar(docente: DocenteModel): Long {
         val database = requireDb()
         database.docenteQueries.insertDocente(
             carnet_identidad = docente.carnetIdentidad.toLong(),
             nombre = docente.nombre,
             apellido = docente.apellido
         )
+        return database.docenteQueries.getLastInsertId().executeAsOne()
     }
 
-    fun obtener(carnet: Int): DocenteModel? {
+    fun obtenerPorId(id: Long): DocenteModel? {
         val database = requireDb()
-        return database.docenteQueries.getDocente(carnet.toLong())
+        return database.docenteQueries.getDocenteById(id)
             .executeAsOneOrNull()
             ?.let {
                 DocenteModel(
+                    id = it.id,
+                    carnetIdentidad = it.carnet_identidad.toInt(),
+                    nombre = it.nombre,
+                    apellido = it.apellido
+                )
+            }
+    }
+
+    fun obtenerPorCarnet(carnet: Int): DocenteModel? {
+        val database = requireDb()
+        return database.docenteQueries.getDocenteByCarnet(carnet.toLong())
+            .executeAsOneOrNull()
+            ?.let {
+                DocenteModel(
+                    id = it.id,
                     carnetIdentidad = it.carnet_identidad.toInt(),
                     nombre = it.nombre,
                     apellido = it.apellido
@@ -38,6 +55,7 @@ class DocenteModel(
             .executeAsList()
             .map {
                 DocenteModel(
+                    id = it.id,
                     carnetIdentidad = it.carnet_identidad.toInt(),
                     nombre = it.nombre,
                     apellido = it.apellido
@@ -50,12 +68,12 @@ class DocenteModel(
         database.docenteQueries.updateDocente(
             nombre = docente.nombre,
             apellido = docente.apellido,
-            carnet_identidad = docente.carnetIdentidad.toLong()
+            id = docente.id
         )
     }
 
-    fun eliminar(carnet: Int) {
+    fun eliminar(id: Long) {
         val database = requireDb()
-        database.docenteQueries.deleteDocente(carnet.toLong())
+        database.docenteQueries.deleteDocente(id)
     }
 }

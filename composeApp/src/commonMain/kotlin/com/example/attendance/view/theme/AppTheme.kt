@@ -99,7 +99,7 @@ data class AppTextSizes(
 )
 
 data class AppMetrics(
-    val inputMinHeight: Dp = 56.dp,
+    val inputMinHeight: Dp = 42.dp,
     val buttonHeight: Dp = 48.dp,
     val cardRadius: Dp = 18.dp,
     val modalHorizontalPadding: Dp = 20.dp,

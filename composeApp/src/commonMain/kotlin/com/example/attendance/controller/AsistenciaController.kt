@@ -24,10 +24,14 @@ class AsistenciaController(
     }
 
     fun iniciarAsistenciaSeleccionada(): Long? {
-        val materia = asistenciaModel.materiaSeleccionada.value ?: return null
+        val materia = asistenciaModel.materiaSeleccionada.value
+        if (materia == null) return null
+
         val asistenciaId = asistenciaModel.insertarConFechaActual(materia.id)
+
         registrarDetallesIniciales(asistenciaId, materia.id)
         asistenciaModel.cargarAsistenciasMateria(materia.id)
+
         return asistenciaId
     }
 
@@ -38,6 +42,11 @@ class AsistenciaController(
     fun abrirInscritos() {
         val materia = asistenciaModel.materiaSeleccionada.value ?: return
         view.irInscritos(materia)
+    }
+
+    fun abrirNuevaAsistencia() {
+        val materia = asistenciaModel.materiaSeleccionada.value ?: return
+        view.irNuevaAsistencia(materia.id)
     }
 
     fun iniciarAsistenciaYAbrirDetalle() {
@@ -60,14 +69,23 @@ class AsistenciaController(
 
     private fun registrarDetallesIniciales(asistenciaId: Long, materiaId: Long) {
         val alumnos = estudianteModel.obtenerPorMateria(materiaId)
-        for (alumno in alumnos) {
-            detalleAsistenciaModel.insertar(
-                DetalleAsistenciaModel(
-                    asistenciaId = asistenciaId,
-                    estudianteId = alumno.id,
-                    estado = "FALTA"
+
+        alumnos.forEach { alumno ->
+            if (alumno.id == 0L) {
+                return@forEach
+            }
+
+            try {
+                detalleAsistenciaModel.insertar(
+                    DetalleAsistenciaModel(
+                        asistenciaId = asistenciaId,
+                        estudianteId = alumno.id,
+                        estado = "FALTA"
+                    )
                 )
-            )
+            } catch (e: Exception) {
+                throw e
+            }
         }
     }
 }

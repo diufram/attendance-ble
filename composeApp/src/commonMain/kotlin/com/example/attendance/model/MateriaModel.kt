@@ -10,8 +10,7 @@ class MateriaModel(
     val nombre: String = "",
     val grupo: String = "",
     val periodo: String = "",
-    val docenteNombre: String = "",
-    val docenteId: Int = 0,
+    val docenteId: Long? = null,
     val bitmapIndexEstudiante: Int? = null,
     private val db: AttendanceDatabase? = null
 ) {
@@ -27,15 +26,12 @@ class MateriaModel(
 
     fun insertar(materia: MateriaModel) {
         val database = requireDb()
-        asegurarDocenteExiste(materia.docenteId, materia.docenteNombre)
         database.materiaQueries.insertMateria(
             sigla = materia.sigla,
             nombre = materia.nombre,
             grupo = materia.grupo,
             periodo = materia.periodo,
-            docente_nombre = materia.docenteNombre,
-            docente_id = materia.docenteId.toLong(),
-            bitmap_index_estudiante = materia.bitmapIndexEstudiante?.toLong()
+            docente_id = materia.docenteId
         )
     }
 
@@ -50,9 +46,7 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt(),
-                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
+                    docenteId = it.docente_id
                 )
             }
     }
@@ -68,16 +62,15 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt(),
-                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
+                    docenteId = it.docente_id
                 )
             }
     }
 
-    fun obtenerPorDocente(docenteId: Int): List<MateriaModel> {
+    fun obtenerPorDocente(docenteId: Long?): List<MateriaModel> {
+        if (docenteId == null) return emptyList()
         val database = requireDb()
-        return database.materiaQueries.getMateriasByDocente(docenteId.toLong())
+        return database.materiaQueries.getMateriasByDocente(docenteId)
             .executeAsList()
             .map {
                 MateriaModel(
@@ -86,14 +79,12 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt(),
-                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
+                    docenteId = it.docente_id
                 )
             }
     }
 
-    fun cargarMateriasDocente(docenteId: Int) {
+    fun cargarMateriasDocente(docenteId: Long?) {
         _materiasDocente.value = obtenerPorDocente(docenteId)
     }
 
@@ -130,9 +121,7 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt(),
-                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
+                    docenteId = it.docente_id
                 )
             }
     }
@@ -148,9 +137,8 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteNombre = it.docente_nombre,
-                    docenteId = it.docente_id.toInt(),
-                    bitmapIndexEstudiante = it.bitmap_index_estudiante?.toInt()
+                    docenteId = it.docente_id,
+                    bitmapIndexEstudiante = it.bitmap_index_estudiante.toInt()
                 )
             }
     }
@@ -162,16 +150,7 @@ class MateriaModel(
             nombre = materia.nombre,
             grupo = materia.grupo,
             periodo = materia.periodo,
-            docente_nombre = materia.docenteNombre,
             id = materia.id
-        )
-    }
-
-    fun actualizarBitmapIndexEstudiante(materiaId: Long, bitmapIndex: Int) {
-        val database = requireDb()
-        database.materiaQueries.updateBitmapIndexEstudiante(
-            bitmap_index_estudiante = bitmapIndex.toLong(),
-            id = materiaId
         )
     }
 
@@ -180,16 +159,4 @@ class MateriaModel(
         database.materiaQueries.deleteMateria(id)
     }
 
-    private fun asegurarDocenteExiste(carnet: Int, nombre: String) {
-        val database = requireDb()
-        val carnetSeguro = carnet.toLong()
-        val existe = database.docenteQueries.getDocente(carnetSeguro).executeAsOneOrNull() != null
-        if (!existe) {
-            database.docenteQueries.insertDocente(
-                carnet_identidad = carnetSeguro,
-                nombre = nombre,
-                apellido = ""
-            )
-        }
-    }
 }

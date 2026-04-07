@@ -1,23 +1,198 @@
 package com.example.attendance.controller
 
-import com.example.attendance.IMateriaEstudianteView
+import com.example.attendance.ble.BleDebug
+import com.example.attendance.ble.BlePacketCodec
+import com.example.attendance.ble.BleTransceiver
+import com.example.attendance.ble.StudentBleAttendanceSession
+import com.example.attendance.ble.toHexPreview
 import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
+import com.example.attendance.navigation.AppNavigation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlin.time.TimeSource
 
 class MateriaEstudianteController(
     private val materiaModel: MateriaModel,
     private val estudianteModel: EstudianteModel,
     private val inscritoModel: InscritoModel,
-    private var view: IMateriaEstudianteView,
+    private val navigator: AppNavigation,
 ) {
-    fun setView(view: IMateriaEstudianteView) {
-        this.view = view
+    private companion object {
+        const val BLE_WARMUP_MS = 2500L
+        const val BLE_CACHE_FLUSH_MS = 250L
     }
 
+    data class BleConfirmacionUi(
+        val nombreMateria: String,
+        val sigla: String,
+        val grupo: String,
+    )
+
+    private val bleTransceiver = BleTransceiver()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    private val _bleEstado = MutableStateFlow("BLE inactivo")
+    val bleEstado: StateFlow<String> = _bleEstado.asStateFlow()
+
+    private val _bleActivoMateriaId = MutableStateFlow<Long?>(null)
+    val bleActivoMateriaId: StateFlow<Long?> = _bleActivoMateriaId.asStateFlow()
+
+    private val _bleConfirmacion = MutableStateFlow<BleConfirmacionUi?>(null)
+    val bleConfirmacion: StateFlow<BleConfirmacionUi?> = _bleConfirmacion.asStateFlow()
+
+    private var studentBleSession: StudentBleAttendanceSession? = null
+    private var advertiseJob: Job? = null
+    private var scanStartJob: Job? = null
+    private var bleWarmupStart: kotlin.time.TimeMark? = null
+
     fun cerrarSesion() {
+        detenerBleEstudiante()
         materiaModel.limpiarMateriasEstudiante()
-        view.irLogin()
+        navigator.irLoginView()
+    }
+
+    fun iniciarBleEstudiante(materia: MateriaModel): String? {
+        val bitmapIndex = materia.bitmapIndexEstudiante
+            ?: return "Esta materia no tiene bitmap index asignado"
+
+        BleDebug.log(
+            "ESTUDIANTE",
+            "Iniciando BLE materiaId=${materia.id} sigla=${materia.sigla} grupo=${materia.grupo} bitmapIndex=$bitmapIndex"
+        )
+
+        detenerBleEstudiante()
+        _bleConfirmacion.value = null
+
+        val session = StudentBleAttendanceSession(
+            sigla = materia.sigla,
+            grupo = materia.grupo,
+            indice = bitmapIndex
+        )
+        studentBleSession = session
+        _bleActivoMateriaId.value = materia.id
+        _bleEstado.value = "Escuchando confirmacion BLE..."
+        bleWarmupStart = TimeSource.Monotonic.markNow()
+
+        BleDebug.log("ESTUDIANTE", "Limpieza estricta de cache BLE previa a iniciar")
+        bleTransceiver.stopAll()
+        scope.launch {
+            delay(BLE_CACHE_FLUSH_MS)
+            bleTransceiver.stopAll()
+        }
+
+        scanStartJob?.cancel()
+        scanStartJob = scope.launch {
+            delay(BLE_CACHE_FLUSH_MS)
+            bleTransceiver.startScanning(
+                onPayload = { payload ->
+                    val warmup = bleWarmupStart
+                    if (warmup != null && warmup.elapsedNow().inWholeMilliseconds < BLE_WARMUP_MS) {
+                        BleDebug.log("ESTUDIANTE-SCAN", "Ignorado durante warmup")
+                        return@startScanning
+                    }
+                    BleDebug.log("ESTUDIANTE-SCAN", "Payload recibido ${payload.toHexPreview()}")
+                    when (val parsed = BlePacketCodec.decodeAny(payload)) {
+                        is BlePacketCodec.ParsedPacket.TeacherFragment -> {
+                            BleDebug.log(
+                                "ESTUDIANTE-SCAN",
+                                "TeacherFragment sigla=${parsed.packet.sigla} grupo=${parsed.packet.grupo} ark=${parsed.packet.ark} len=${parsed.packet.fragmentoBitmap.size}"
+                            )
+                        }
+
+                        is BlePacketCodec.ParsedPacket.Student -> {
+                            BleDebug.log(
+                                "ESTUDIANTE-SCAN",
+                                "StudentAdv de otro dispositivo sigla=${parsed.packet.sigla} grupo=${parsed.packet.grupo} indice=${parsed.packet.indice}"
+                            )
+                        }
+
+                        null -> BleDebug.log("ESTUDIANTE-SCAN", "Payload no parseable")
+                    }
+
+                    when (session.onScannedPayload(payload)) {
+                        StudentBleAttendanceSession.ScanResult.CONFIRMADO -> {
+                            val bitmap = session.reconstructedBitmap()
+                            BleDebug.log(
+                                "ESTUDIANTE-SCAN",
+                                "CONFIRMADO bitmap=${bitmap.toHexPreview()} arks=${session.receivedArks().sorted()}"
+                            )
+                            _bleConfirmacion.value = BleConfirmacionUi(
+                                nombreMateria = materia.nombre,
+                                sigla = materia.sigla,
+                                grupo = materia.grupo,
+                            )
+                            _bleEstado.value = "✓ Asistencia confirmada"
+                            detenerBleEstudiante(keepStatus = true)
+                        }
+
+                        StudentBleAttendanceSession.ScanResult.FRAGMENTO_RECIBIDO -> {
+                            BleDebug.log(
+                                "ESTUDIANTE-SCAN",
+                                "Fragmento recibido arks=${session.receivedArks().sorted()}"
+                            )
+                            _bleEstado.value = "Recibiendo confirmacion... (${session.receivedArks().size})"
+                        }
+
+                        StudentBleAttendanceSession.ScanResult.INVALIDO,
+                        StudentBleAttendanceSession.ScanResult.IGNORADO -> Unit
+                    }
+                },
+                onError = { error ->
+                    BleDebug.log("ESTUDIANTE-SCAN", "Error scan: $error")
+                    _bleEstado.value = error
+                }
+            )
+        }
+
+        advertiseJob = scope.launch {
+            while (_bleActivoMateriaId.value != null) {
+                val payload = studentBleSession?.studentPayload() ?: break
+                BleDebug.log("ESTUDIANTE-ADV", "Emitiendo student payload ${payload.toHexPreview()}")
+                bleTransceiver.startAdvertising(payload) { error ->
+                    BleDebug.log("ESTUDIANTE-ADV", "Error advertising: $error")
+                    _bleEstado.value = error
+                }
+                delay(700)
+            }
+        }
+
+        return null
+    }
+
+    fun detenerBleEstudiante(keepStatus: Boolean = false) {
+        BleDebug.log("ESTUDIANTE", "Deteniendo BLE estudiante")
+        scanStartJob?.cancel()
+        scanStartJob = null
+        advertiseJob?.cancel()
+        advertiseJob = null
+        studentBleSession = null
+        bleWarmupStart = null
+        _bleActivoMateriaId.value = null
+        bleTransceiver.stopAll()
+        scope.launch {
+            delay(BLE_CACHE_FLUSH_MS)
+            bleTransceiver.stopAll()
+        }
+        if (!keepStatus) {
+            _bleEstado.value = "BLE inactivo"
+        }
+    }
+
+    fun cerrarCardConfirmacionBle() {
+        _bleConfirmacion.value = null
+        if (_bleActivoMateriaId.value == null) {
+            _bleEstado.value = "BLE inactivo"
+        }
     }
 
     fun registrarMateriaDesdeQr(payload: String): String? {
@@ -42,8 +217,7 @@ class MateriaEstudianteController(
                     nombre = qr.nombre,
                     grupo = qr.grupo,
                     periodo = qr.periodo,
-                    docenteNombre = "",
-                    docenteId = 0
+                    docenteId = null
                 )
             )
             materiaModel.obtenerPorFormacion(
@@ -57,10 +231,6 @@ class MateriaEstudianteController(
             inscritoModel.guardarInscripcionConBitmap(
                 materiaId = materia.id,
                 estudianteId = estudiante.id,
-                bitmapIndex = bitmapIndex
-            )
-            materiaModel.actualizarBitmapIndexEstudiante(
-                materiaId = materia.id,
                 bitmapIndex = bitmapIndex
             )
             materiaModel.cargarMateriasEstudiante(carnet)
@@ -107,4 +277,9 @@ class MateriaEstudianteController(
         val periodo: String,
         val bitmapIndexPorCarnet: Map<Int, Int>
     )
+
+    fun destroy() {
+        detenerBleEstudiante()
+        scope.cancel()
+    }
 }

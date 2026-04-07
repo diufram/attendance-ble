@@ -4,6 +4,7 @@ CREATE TABLE inscrito (
     estudiante_id INTEGER NOT NULL,
     bitmap_index INTEGER NOT NULL,
     UNIQUE(materia_id, bitmap_index),
+    UNIQUE(materia_id, estudiante_id),
     FOREIGN KEY (materia_id) REFERENCES materia(id),
     FOREIGN KEY (estudiante_id) REFERENCES estudiante(id)
 );
@@ -44,7 +45,7 @@ WHERE i.materia_id = ?
 ORDER BY i.bitmap_index ASC;
 
 getMateriasByEstudiante:
-SELECT m.id, m.sigla, m.nombre, m.grupo, m.periodo, m.docente_nombre, m.docente_id, m.bitmap_index_estudiante
+SELECT m.id, m.sigla, m.nombre, m.grupo, m.periodo, m.docente_id, i.bitmap_index AS bitmap_index_estudiante
 FROM materia m
 INNER JOIN inscrito i ON m.id = i.materia_id
 INNER JOIN estudiante e ON e.id = i.estudiante_id

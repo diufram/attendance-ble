@@ -1,6 +1,6 @@
 CREATE TABLE estudiante (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    carnet_identidad INTEGER NOT NULL,
+    carnet_identidad INTEGER NOT NULL UNIQUE,
     nombre TEXT NOT NULL,
     apellido TEXT NOT NULL
 );
