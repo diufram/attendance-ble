@@ -1,19 +1,19 @@
 package com.example.attendance.controller
 
-import com.example.attendance.IAsistenciaDetalleView
+import com.example.attendance.ble.BleConfig
 import com.example.attendance.ble.BleDebug
 import com.example.attendance.ble.BlePacketCodec
 import com.example.attendance.ble.BleTransceiver
 import com.example.attendance.ble.TeacherBleAttendanceSession
 import com.example.attendance.ble.toHexPreview
 import com.example.attendance.model.AsistenciaModel
-import com.example.attendance.model.DetalleAsistenciaModel
+import com.example.attendance.model.AsistenciaDetalleModel
 import com.example.attendance.model.EstudianteModel
+import com.example.attendance.navigation.AppNavigation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -24,16 +24,9 @@ import kotlin.time.TimeSource
 class AsistenciaDetalleController(
     private val asistenciaModel: AsistenciaModel,
     private val estudianteModel: EstudianteModel,
-    private val detalleAsistenciaModel: DetalleAsistenciaModel,
-    private var view: IAsistenciaDetalleView,
+    private val asistenciaDetalleModel: AsistenciaDetalleModel,
+    private val navigator: AppNavigation,
 ) {
-    private companion object {
-        const val BLE_WARMUP_MS = 2500L
-        const val BLE_BATCH_EMIT_MS = 2000L
-        const val BLE_FRAGMENT_ADV_MS = 400L
-        const val BLE_CACHE_FLUSH_MS = 250L
-    }
-
     private val bleTransceiver = BleTransceiver()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -54,61 +47,25 @@ class AsistenciaDetalleController(
     private var frozenEmissionPayloads: List<ByteArray> = emptyList()
     private var emissionCursor: Int = 0
 
-    fun setView(view: IAsistenciaDetalleView) {
-        this.view = view
-    }
-
-    fun seleccionarAsistencia(asistenciaId: Long) {
-        detenerBleDocente()
-        detalleAsistenciaModel.setAsistenciaSeleccionada(asistenciaId, esNueva = false)
-        detalleAsistenciaModel.cargarDetallesAsistencia(asistenciaId)
-    }
-
-    fun prepararNuevaAsistencia(materiaId: Long) {
-        detenerBleDocente()
-        detalleAsistenciaModel.setAsistenciaSeleccionada(-1L, esNueva = true)
-
-        val alumnos = estudianteModel.obtenerPorMateria(materiaId)
-
-        val detallesTemporales = alumnos.mapIndexed { index, alumno ->
-            DetalleAsistenciaModel(
-                id = index.toLong(),
-                asistenciaId = -1L,
-                estudianteId = alumno.id,
-                estado = "FALTA",
-                carnetEstudiante = alumno.carnetIdentidad,
-                nombreEstudiante = alumno.nombre,
-                apellidoEstudiante = alumno.apellido,
-                bitmapIndexEstudiante = index
-            )
-        }
-
-        detalleAsistenciaModel.cargarDetallesTemporales(detallesTemporales)
-    }
-
-    fun guardarAsistencia(): Boolean {
-        val materia = asistenciaModel.materiaSeleccionada.value ?: run {
-            return false
-        }
-
+    fun guardarAsistencia(materiaId: Long): Boolean {
         return try {
-            val asistenciaId = asistenciaModel.insertarConFechaActual(materia.id)
+            val asistenciaId = asistenciaModel.insertarConFechaActual(materiaId)
 
-            val detallesActuales = detalleAsistenciaModel.detallesAsistencia.value
+            val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
 
             detallesActuales.forEach { detalle ->
-                detalleAsistenciaModel.insertar(
-                    DetalleAsistenciaModel(
+                asistenciaDetalleModel.insertar(
+                    AsistenciaDetalleModel(
                         asistenciaId = asistenciaId,
-                        estudianteId = detalle.estudianteId,
+                        carnetIdentidad = detalle.carnetIdentidad,
                         estado = detalle.estado
                     )
                 )
             }
 
-            detalleAsistenciaModel.setAsistenciaSeleccionada(asistenciaId, esNueva = false)
-            detalleAsistenciaModel.cargarDetallesAsistencia(asistenciaId)
-            asistenciaModel.cargarAsistenciasMateria(materia.id)
+            asistenciaDetalleModel.setAsistenciaSeleccionada(asistenciaId, esNueva = false)
+            asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
+            asistenciaModel.cargarAsistenciasMateria(materiaId)
 
             true
         } catch (e: Exception) {
@@ -116,33 +73,33 @@ class AsistenciaDetalleController(
         }
     }
 
-    fun alternarEstado(estudianteId: Long, estadoActual: String) {
-        val asistenciaId = detalleAsistenciaModel.asistenciaSeleccionadaId.value ?: return
-        val esNueva = detalleAsistenciaModel.esNuevaAsistencia.value
+    fun alternarEstado(carnetIdentidad: Long, estadoActual: String) {
+        val asistenciaId = asistenciaDetalleModel.asistenciaSeleccionadaId.value ?: return
+        val esNueva = asistenciaDetalleModel.esNuevaAsistencia.value
         val nuevoEstado = if (estadoActual == "PRESENTE") "FALTA" else "PRESENTE"
 
         if (esNueva) {
-            val detallesActuales = detalleAsistenciaModel.detallesAsistencia.value
+            val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
             val detallesActualizados = detallesActuales.map { detalle ->
-                if (detalle.estudianteId == estudianteId) {
+                if (detalle.carnetIdentidad == carnetIdentidad) {
                     detalle.copy(estado = nuevoEstado)
                 } else {
                     detalle
                 }
             }
-            detalleAsistenciaModel.cargarDetallesTemporales(detallesActualizados)
+            asistenciaDetalleModel.cargarDetallesTemporales(detallesActualizados)
 
-            val detalle = detallesActuales.firstOrNull { it.estudianteId == estudianteId }
+            val detalle = detallesActuales.firstOrNull { it.carnetIdentidad == carnetIdentidad }
             val bitmapIndex = detalle?.bitmapIndexEstudiante
             if (bitmapIndex != null) {
                 val changed = bleSession?.setPresence(bitmapIndex, nuevoEstado == "PRESENTE") == true
                 if (changed) bitmapDirty = true
             }
         } else {
-            detalleAsistenciaModel.actualizarEstado(asistenciaId, estudianteId, nuevoEstado)
-            detalleAsistenciaModel.cargarDetallesAsistencia(asistenciaId)
+            asistenciaDetalleModel.actualizarEstado(asistenciaId, carnetIdentidad, nuevoEstado)
+            asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
 
-            val detalle = detalleAsistenciaModel.detallesAsistencia.value.firstOrNull { it.estudianteId == estudianteId }
+            val detalle = asistenciaDetalleModel.detallesAsistencia.value.firstOrNull { it.carnetIdentidad == carnetIdentidad }
             val bitmapIndex = detalle?.bitmapIndexEstudiante
             if (bitmapIndex != null) {
                 val changed = bleSession?.setPresence(bitmapIndex, nuevoEstado == "PRESENTE") == true
@@ -151,17 +108,12 @@ class AsistenciaDetalleController(
         }
     }
 
-    fun limpiar() {
-        detenerBleDocente()
-        detalleAsistenciaModel.limpiarEstadoAsistencia()
-    }
-
     fun iniciarBleDocente(sigla: String, grupo: String): String? {
         if (sigla.isBlank() || grupo.isBlank()) return "No hay materia activa para BLE"
-        val asistenciaId = detalleAsistenciaModel.asistenciaSeleccionadaId.value
+        val asistenciaId = asistenciaDetalleModel.asistenciaSeleccionadaId.value
             ?: return "No hay asistencia seleccionada"
 
-        val detalles = detalleAsistenciaModel.detallesAsistencia.value
+        val detalles = asistenciaDetalleModel.detallesAsistencia.value
         if (detalles.isEmpty()) return "No hay estudiantes para iniciar BLE"
 
         BleDebug.log(
@@ -170,7 +122,7 @@ class AsistenciaDetalleController(
         )
         BleDebug.log(
             "DOCENTE",
-            "Mapa bitmapIndex->estudianteId=" + detalles.joinToString { "${it.bitmapIndexEstudiante}:${it.estudianteId}" }
+            "Mapa bitmapIndex->estudianteId=" + detalles.joinToString { "${it.bitmapIndexEstudiante}:${it.carnetIdentidad}" }
         )
 
         detenerBleDocente()
@@ -197,17 +149,17 @@ class AsistenciaDetalleController(
         BleDebug.log("DOCENTE", "Limpieza estricta de cache BLE previa a iniciar")
         bleTransceiver.stopAll()
         scope.launch {
-            delay(BLE_CACHE_FLUSH_MS)
+            delay(BleConfig.BLE_CACHE_FLUSH_MS)
             bleTransceiver.stopAll()
         }
 
         scanStartJob?.cancel()
         scanStartJob = scope.launch {
-            delay(BLE_CACHE_FLUSH_MS)
+            delay(BleConfig.BLE_CACHE_FLUSH_MS)
             bleTransceiver.startScanning(
                 onPayload = { payload ->
                     val warmup = bleWarmupStart
-                    if (warmup != null && warmup.elapsedNow().inWholeMilliseconds < BLE_WARMUP_MS) {
+                    if (warmup != null && warmup.elapsedNow().inWholeMilliseconds < BleConfig.BLE_WARMUP_MS) {
                         BleDebug.log("DOCENTE-SCAN", "Ignorado durante warmup")
                         return@startScanning
                     }
@@ -233,7 +185,7 @@ class AsistenciaDetalleController(
                         ultimoProcesadoPorIndice[student.indice] = ahora
                         bitmapDirty = true
 
-                        val detalle = detalleAsistenciaModel.detallesAsistencia.value.firstOrNull {
+                        val detalle = asistenciaDetalleModel.detallesAsistencia.value.firstOrNull {
                             it.bitmapIndexEstudiante == student.indice
                         }
                         if (detalle == null) {
@@ -244,23 +196,23 @@ class AsistenciaDetalleController(
                             return@startScanning
                         }
 
-                        if (detalleAsistenciaModel.esNuevaAsistencia.value) {
-                            val detallesActuales = detalleAsistenciaModel.detallesAsistencia.value
+                        if (asistenciaDetalleModel.esNuevaAsistencia.value) {
+                            val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
                             val detallesActualizados = detallesActuales.map { item ->
-                                if (item.estudianteId == detalle.estudianteId) {
+                                if (item.carnetIdentidad == detalle.carnetIdentidad) {
                                     item.copy(estado = "PRESENTE")
                                 } else {
                                     item
                                 }
                             }
-                            detalleAsistenciaModel.cargarDetallesTemporales(detallesActualizados)
+                            asistenciaDetalleModel.cargarDetallesTemporales(detallesActualizados)
                         } else {
-                            detalleAsistenciaModel.actualizarEstado(asistenciaId, detalle.estudianteId, "PRESENTE")
-                            detalleAsistenciaModel.cargarDetallesAsistencia(asistenciaId)
+                            asistenciaDetalleModel.actualizarEstado(asistenciaId, detalle.carnetIdentidad, "PRESENTE")
+                            asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
                         }
                         BleDebug.log(
                             "DOCENTE-SCAN",
-                            "Marcado PRESENTE estudianteId=${detalle.estudianteId} bitmapIndex=${student.indice} presentes=${session.presentesCount()} bitmap=${session.currentBitmap().toHexPreview()}"
+                            "Marcado PRESENTE carnet=${detalle.carnetIdentidad} bitmapIndex=${student.indice} presentes=${session.presentesCount()} bitmap=${session.currentBitmap().toHexPreview()}"
                         )
                         _bleEstado.value = "Detectados ${session.presentesCount()} presentes"
                     }
@@ -275,7 +227,7 @@ class AsistenciaDetalleController(
         batchEmitJob?.cancel()
         batchEmitJob = scope.launch {
             while (_bleActivo.value) {
-                delay(BLE_BATCH_EMIT_MS)
+                delay(BleConfig.BLE_BATCH_EMIT_MS)
                 val currentSession = bleSession ?: continue
                 if (!bitmapDirty && frozenEmissionPayloads.isNotEmpty()) continue
 
@@ -295,7 +247,7 @@ class AsistenciaDetalleController(
             while (_bleActivo.value) {
                 val payloads = frozenEmissionPayloads
                 if (payloads.isEmpty()) {
-                    delay(BLE_FRAGMENT_ADV_MS)
+                    delay(BleConfig.BLE_FRAGMENT_ADV_MS)
                     continue
                 }
                 val payload = payloads[emissionCursor % payloads.size]
@@ -311,7 +263,7 @@ class AsistenciaDetalleController(
                     BleDebug.log("DOCENTE-ADV", "Error advertising: $error")
                     _bleEstado.value = error
                 }
-                delay(BLE_FRAGMENT_ADV_MS)
+                delay(BleConfig.BLE_FRAGMENT_ADV_MS)
             }
         }
 
@@ -334,7 +286,7 @@ class AsistenciaDetalleController(
         ultimoProcesadoPorIndice.clear()
         bleTransceiver.stopAll()
         scope.launch {
-            delay(BLE_CACHE_FLUSH_MS)
+            delay(BleConfig.BLE_CACHE_FLUSH_MS)
             bleTransceiver.stopAll()
         }
         _bleActivo.value = false
@@ -343,11 +295,6 @@ class AsistenciaDetalleController(
 
     fun volver() {
         detenerBleDocente()
-        view.irVolver()
-    }
-
-    fun destroy() {
-        detenerBleDocente()
-        scope.cancel()
+        navigator.volver()
     }
 }

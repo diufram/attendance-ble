@@ -4,13 +4,13 @@ CREATE TABLE materia (
     nombre TEXT NOT NULL,
     grupo TEXT NOT NULL,
     periodo TEXT NOT NULL,
-    docente_id INTEGER,
+    docente_carnet INTEGER,
     UNIQUE(sigla, grupo, periodo),
-    FOREIGN KEY (docente_id) REFERENCES docente(id)
+    FOREIGN KEY (docente_carnet) REFERENCES docente(carnet_identidad)
 );
 
 insertMateria:
-INSERT INTO materia(sigla, nombre, grupo, periodo, docente_id)
+INSERT INTO materia(sigla, nombre, grupo, periodo, docente_carnet)
 VALUES (?, ?, ?, ?, ?);
 
 getMateriaById:
@@ -20,7 +20,7 @@ getAllMaterias:
 SELECT * FROM materia;
 
 getMateriasByDocente:
-SELECT * FROM materia WHERE docente_id = ?;
+SELECT * FROM materia WHERE docente_carnet = ?;
 
 getMateriaByFormacion:
 SELECT * FROM materia WHERE sigla = ? AND grupo = ? AND periodo = ?;

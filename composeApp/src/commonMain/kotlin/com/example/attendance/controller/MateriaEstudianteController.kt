@@ -1,11 +1,12 @@
 package com.example.attendance.controller
 
+import com.example.attendance.ble.BleConfig
 import com.example.attendance.ble.BleDebug
 import com.example.attendance.ble.BlePacketCodec
 import com.example.attendance.ble.BleTransceiver
 import com.example.attendance.ble.StudentBleAttendanceSession
 import com.example.attendance.ble.toHexPreview
-import com.example.attendance.model.EstudianteModel
+import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.navigation.AppNavigation
@@ -13,7 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,15 +23,10 @@ import kotlin.time.TimeSource
 
 class MateriaEstudianteController(
     private val materiaModel: MateriaModel,
-    private val estudianteModel: EstudianteModel,
+    private val docenteModel: DocenteModel,
     private val inscritoModel: InscritoModel,
     private val navigator: AppNavigation,
 ) {
-    private companion object {
-        const val BLE_WARMUP_MS = 2500L
-        const val BLE_CACHE_FLUSH_MS = 250L
-    }
-
     data class BleConfirmacionUi(
         val nombreMateria: String,
         val sigla: String,
@@ -56,12 +51,12 @@ class MateriaEstudianteController(
     private var bleWarmupStart: kotlin.time.TimeMark? = null
 
     fun cerrarSesion() {
-        detenerBleEstudiante()
+        detenerMarcadoAsistencia()
         materiaModel.limpiarMateriasEstudiante()
         navigator.irLoginView()
     }
 
-    fun iniciarBleEstudiante(materia: MateriaModel): String? {
+    fun marcarAsistencia(materia: MateriaModel): String? {
         val bitmapIndex = materia.bitmapIndexEstudiante
             ?: return "Esta materia no tiene bitmap index asignado"
 
@@ -70,7 +65,7 @@ class MateriaEstudianteController(
             "Iniciando BLE materiaId=${materia.id} sigla=${materia.sigla} grupo=${materia.grupo} bitmapIndex=$bitmapIndex"
         )
 
-        detenerBleEstudiante()
+        detenerMarcadoAsistencia()
         _bleConfirmacion.value = null
 
         val session = StudentBleAttendanceSession(
@@ -86,17 +81,17 @@ class MateriaEstudianteController(
         BleDebug.log("ESTUDIANTE", "Limpieza estricta de cache BLE previa a iniciar")
         bleTransceiver.stopAll()
         scope.launch {
-            delay(BLE_CACHE_FLUSH_MS)
+            delay(BleConfig.BLE_CACHE_FLUSH_MS)
             bleTransceiver.stopAll()
         }
 
         scanStartJob?.cancel()
         scanStartJob = scope.launch {
-            delay(BLE_CACHE_FLUSH_MS)
+            delay(BleConfig.BLE_CACHE_FLUSH_MS)
             bleTransceiver.startScanning(
                 onPayload = { payload ->
                     val warmup = bleWarmupStart
-                    if (warmup != null && warmup.elapsedNow().inWholeMilliseconds < BLE_WARMUP_MS) {
+                    if (warmup != null && warmup.elapsedNow().inWholeMilliseconds < BleConfig.BLE_WARMUP_MS) {
                         BleDebug.log("ESTUDIANTE-SCAN", "Ignorado durante warmup")
                         return@startScanning
                     }
@@ -132,7 +127,7 @@ class MateriaEstudianteController(
                                 grupo = materia.grupo,
                             )
                             _bleEstado.value = "✓ Asistencia confirmada"
-                            detenerBleEstudiante(keepStatus = true)
+                            detenerMarcadoAsistencia(status = true)
                         }
 
                         StudentBleAttendanceSession.ScanResult.FRAGMENTO_RECIBIDO -> {
@@ -169,7 +164,7 @@ class MateriaEstudianteController(
         return null
     }
 
-    fun detenerBleEstudiante(keepStatus: Boolean = false) {
+    fun detenerMarcadoAsistencia(status: Boolean = false) {
         BleDebug.log("ESTUDIANTE", "Deteniendo BLE estudiante")
         scanStartJob?.cancel()
         scanStartJob = null
@@ -180,15 +175,15 @@ class MateriaEstudianteController(
         _bleActivoMateriaId.value = null
         bleTransceiver.stopAll()
         scope.launch {
-            delay(BLE_CACHE_FLUSH_MS)
+            delay(BleConfig.BLE_CACHE_FLUSH_MS)
             bleTransceiver.stopAll()
         }
-        if (!keepStatus) {
+        if (!status) {
             _bleEstado.value = "BLE inactivo"
         }
     }
 
-    fun cerrarCardConfirmacionBle() {
+    fun cerrarConfirmacionAsistencia() {
         _bleConfirmacion.value = null
         if (_bleActivoMateriaId.value == null) {
             _bleEstado.value = "BLE inactivo"
@@ -203,8 +198,21 @@ class MateriaEstudianteController(
         val bitmapIndex = qr.bitmapIndexPorCarnet[carnet]
             ?: return "Tu carnet no esta habilitado en este QR"
 
-        val estudiante = estudianteModel.obtenerPorCarnet(carnet)
-            ?: return "No se encontro el estudiante"
+        val docenteCarnetInt = qr.docenteCarnet.toIntOrNull()
+        val docenteCarnet = if (docenteCarnetInt != null) {
+            var docente = docenteModel.obtenerPorCarnet(docenteCarnetInt)
+            if (docente == null) {
+                docenteModel.insertar(
+                    DocenteModel(
+                        carnetIdentidad = docenteCarnetInt.toLong(),
+                        nombre = qr.docenteNombre.ifBlank { "" },
+                        apellido = qr.docenteApellido.ifBlank { "" }
+                    )
+                )
+                docente = docenteModel.obtenerPorCarnet(docenteCarnetInt)
+            }
+            docente?.carnetIdentidad?.toLong()
+        } else null
 
         val materia = materiaModel.obtenerPorFormacion(
             sigla = qr.sigla,
@@ -217,7 +225,7 @@ class MateriaEstudianteController(
                     nombre = qr.nombre,
                     grupo = qr.grupo,
                     periodo = qr.periodo,
-                    docenteId = null
+                    docenteCarnet = docenteCarnet
                 )
             )
             materiaModel.obtenerPorFormacion(
@@ -230,7 +238,7 @@ class MateriaEstudianteController(
         return try {
             inscritoModel.guardarInscripcionConBitmap(
                 materiaId = materia.id,
-                estudianteId = estudiante.id,
+                carnetIdentidad = carnet.toLong(),
                 bitmapIndex = bitmapIndex
             )
             materiaModel.cargarMateriasEstudiante(carnet)
@@ -250,7 +258,7 @@ class MateriaEstudianteController(
         if (bloques.isEmpty()) return null
 
         val cabecera = bloques.first().split('|').map { it.trim() }
-        if (cabecera.size != 4) return null
+        if (cabecera.size < 7) return null
 
         val bitmapPorCarnet = mutableMapOf<Int, Int>()
         bloques.drop(1).forEach { entrada ->
@@ -266,6 +274,9 @@ class MateriaEstudianteController(
             sigla = cabecera[1],
             grupo = cabecera[2],
             periodo = cabecera[3],
+            docenteNombre = cabecera[4],
+            docenteApellido = cabecera[5],
+            docenteCarnet = cabecera[6],
             bitmapIndexPorCarnet = bitmapPorCarnet
         )
     }
@@ -275,11 +286,9 @@ class MateriaEstudianteController(
         val sigla: String,
         val grupo: String,
         val periodo: String,
+        val docenteNombre: String,
+        val docenteApellido: String,
+        val docenteCarnet: String,
         val bitmapIndexPorCarnet: Map<Int, Int>
     )
-
-    fun destroy() {
-        detenerBleEstudiante()
-        scope.cancel()
-    }
 }

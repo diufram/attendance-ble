@@ -4,7 +4,7 @@ import com.example.attendance.db.AttendanceDatabase
 
 class EstudianteModel(
     val id: Long = 0,
-    val carnetIdentidad: Int = 0,
+    val carnetIdentidad: Long = 0,
     val nombre: String = "",
     val apellido: String = "",
     private val db: AttendanceDatabase? = null
@@ -46,7 +46,7 @@ class EstudianteModel(
             ?.let {
                 EstudianteModel(
                     id = it.id,
-                    carnetIdentidad = it.carnet_identidad.toInt(),
+                    carnetIdentidad = it.carnet_identidad,
                     nombre = it.nombre,
                     apellido = it.apellido
                 )
@@ -60,7 +60,7 @@ class EstudianteModel(
             ?.let {
                 EstudianteModel(
                     id = it.id,
-                    carnetIdentidad = it.carnet_identidad.toInt(),
+                    carnetIdentidad = it.carnet_identidad,
                     nombre = it.nombre,
                     apellido = it.apellido
                 )
@@ -74,7 +74,7 @@ class EstudianteModel(
             .map {
                 EstudianteModel(
                     id = it.id,
-                    carnetIdentidad = it.carnet_identidad.toInt(),
+                    carnetIdentidad = it.carnet_identidad,
                     nombre = it.nombre,
                     apellido = it.apellido
                 )
@@ -90,7 +90,7 @@ class EstudianteModel(
         val lista = resultados.map {
             EstudianteModel(
                 id = it.id,
-                carnetIdentidad = it.carnet_identidad.toInt(),
+                carnetIdentidad = it.carnet_identidad,
                 nombre = it.nombre,
                 apellido = it.apellido
             )

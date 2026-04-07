@@ -42,6 +42,13 @@ import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
 import kotlinx.coroutines.launch
 
+@Composable
+expect fun QrScannerView(
+    modifier: Modifier = Modifier,
+    onQrScanned: (String) -> Unit,
+    onError: (String) -> Unit
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaEstudianteView(
@@ -49,17 +56,12 @@ fun MateriaEstudianteView(
     bleEstado: String,
     bleActivoMateriaId: Long?,
     bleConfirmacion: MateriaEstudianteController.BleConfirmacionUi?,
-    onLogout: () -> Unit,
-    onRegistrarQr: (String) -> String?,
-    onIniciarBleMateria: (MateriaModel) -> String?,
-    onDetenerBle: () -> Unit,
-    onCerrarConfirmacionBle: () -> Unit,
+    onCerrarSesion: () -> Unit,
+    onRegistrarMateriaDesderQr: (String) -> String?,
+    onMarcarAsistencia: (MateriaModel) -> String?,
+    onDetenerMarcadoAsistencia: () -> Unit,
+    onCerrarConfirmacionAsistencia: () -> Unit,
 ) {
-    val metrics = AttendanceThemeTokens.metrics
-    val sizes = AttendanceThemeTokens.textSizes
-    val materias by model.materiasEstudiante.collectAsState()
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
     val scannerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val materiaSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var mostrarEscaner by remember { mutableStateOf(false) }
@@ -67,10 +69,17 @@ fun MateriaEstudianteView(
     var materiaSeleccionada by remember { mutableStateOf<MateriaModel?>(null) }
     var materiaPendienteBle by remember { mutableStateOf<MateriaModel?>(null) }
 
+
+    val metrics = AttendanceThemeTokens.metrics
+    val sizes = AttendanceThemeTokens.textSizes
+    val materias by model.materiasEstudiante.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val coroutineScope = rememberCoroutineScope()
+
     val solicitarPermisosBle = rememberRequestBlePermissions(
         onGranted = {
             val materia = materiaPendienteBle ?: return@rememberRequestBlePermissions
-            val error = onIniciarBleMateria(materia)
+            val error = onMarcarAsistencia(materia)
             if (error != null) {
                 coroutineScope.launch { snackbarHostState.showSnackbar(error) }
             }
@@ -141,7 +150,7 @@ fun MateriaEstudianteView(
                         }
                     },
                     actions = {
-                        TextButton(onClick = onLogout) {
+                        TextButton(onClick = onCerrarSesion) {
                             Icon(Icons.Filled.Logout, contentDescription = null)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Salir")
@@ -330,10 +339,10 @@ fun MateriaEstudianteView(
                                             IconButton(
                                                 onClick = {
                                                     if (confirmado) {
-                                                        onCerrarConfirmacionBle()
+                                                        onCerrarConfirmacionAsistencia()
                                                     } else {
                                                         materiaPendienteBle = null
-                                                        onDetenerBle()
+                                                        onDetenerMarcadoAsistencia()
                                                     }
                                                 }
                                             ) {
@@ -506,7 +515,7 @@ fun MateriaEstudianteView(
                         text = "Cerrar",
                         onClick = {
                             mostrarMateriaSheet = false
-                            onDetenerBle()
+                            onDetenerMarcadoAsistencia()
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -569,7 +578,7 @@ fun MateriaEstudianteView(
                         QrScannerView(
                             modifier = Modifier.fillMaxSize(),
                             onQrScanned = { payload ->
-                                val error = onRegistrarQr(payload)
+                                val error = onRegistrarMateriaDesderQr(payload)
                                 if (error == null) {
                                     mostrarEscaner = false
                                     coroutineScope.launch {

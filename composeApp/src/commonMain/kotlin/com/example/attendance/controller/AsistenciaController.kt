@@ -1,91 +1,37 @@
 package com.example.attendance.controller
 
-import com.example.attendance.IAsistenciaView
 import com.example.attendance.model.AsistenciaModel
-import com.example.attendance.model.DetalleAsistenciaModel
-import com.example.attendance.model.EstudianteModel
+import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
+import com.example.attendance.navigation.AppNavigation
 
 class AsistenciaController(
-    private val estudianteModel: EstudianteModel,
     private val asistenciaModel: AsistenciaModel,
-    private val detalleAsistenciaModel: DetalleAsistenciaModel,
     private val inscritoModel: InscritoModel,
-    private var view: IAsistenciaView,
+    private val materiaModel: MateriaModel,
+    private val navigator: AppNavigation,
 ) {
-    fun setView(view: IAsistenciaView) {
-        this.view = view
-    }
-
-    fun seleccionarMateria(materia: MateriaModel) {
-        asistenciaModel.setMateriaSeleccionada(materia)
-        asistenciaModel.cargarAsistenciasMateria(materia.id)
-    }
-
-    fun iniciarAsistenciaSeleccionada(): Long? {
-        val materia = asistenciaModel.materiaSeleccionada.value
-        if (materia == null) return null
-
-        val asistenciaId = asistenciaModel.insertarConFechaActual(materia.id)
-
-        registrarDetallesIniciales(asistenciaId, materia.id)
-        asistenciaModel.cargarAsistenciasMateria(materia.id)
-
-        return asistenciaId
-    }
-
     fun volver() {
-        view.irVolver()
+        navigator.volver()
     }
 
-    fun abrirInscritos() {
-        val materia = asistenciaModel.materiaSeleccionada.value ?: return
-        view.irInscritos(materia)
+    fun abrirInscritos(materiaId: Long) {
+        val materia = materiaModel.materiasDocente.value.firstOrNull { it.id == materiaId } ?: return
+        navigator.irInscritosView(materia)
     }
 
-    fun abrirNuevaAsistencia() {
-        val materia = asistenciaModel.materiaSeleccionada.value ?: return
-        view.irNuevaAsistencia(materia.id)
+    fun abrirNuevaAsistencia(materiaId: Long) {
+        navigator.irNuevaAsistenciaView(materiaId)
     }
 
-    fun iniciarAsistenciaYAbrirDetalle() {
-        val asistenciaId = iniciarAsistenciaSeleccionada() ?: return
-        view.irDetalle(asistenciaId)
+    fun abrirDetalle(materiaId: Long, asistenciaId: Long) {
+        navigator.irAsistenciaDetalleView(materiaId, asistenciaId)
     }
 
-    fun abrirDetalle(asistenciaId: Long) {
-        view.irDetalle(asistenciaId)
-    }
-
-    fun generarPayloadQrMateria(): String? {
-        val materia = asistenciaModel.materiaSeleccionada.value ?: return null
-        return inscritoModel.construirPayloadQrMateria(materia)
-    }
-
-    fun limpiar() {
-        asistenciaModel.limpiarEstadoMateria()
-    }
-
-    private fun registrarDetallesIniciales(asistenciaId: Long, materiaId: Long) {
-        val alumnos = estudianteModel.obtenerPorMateria(materiaId)
-
-        alumnos.forEach { alumno ->
-            if (alumno.id == 0L) {
-                return@forEach
-            }
-
-            try {
-                detalleAsistenciaModel.insertar(
-                    DetalleAsistenciaModel(
-                        asistenciaId = asistenciaId,
-                        estudianteId = alumno.id,
-                        estado = "FALTA"
-                    )
-                )
-            } catch (e: Exception) {
-                throw e
-            }
-        }
+    fun generarPayloadQrMateria(materiaId: Long): String? {
+        val materia = materiaModel.materiasDocente.value.firstOrNull { it.id == materiaId } ?: return null
+        val docente = materiaModel.docenteActual.value
+        return inscritoModel.construirPayloadQrMateria(materia, docente)
     }
 }

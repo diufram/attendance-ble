@@ -54,12 +54,13 @@ import qrcode.QRCode
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciaView(
+    materiaId: Long,
     model: AsistenciaModel,
     onVolver: () -> Unit,
     onAbrirInscritos: () -> Unit,
-    onIniciarAsistencia: () -> Unit,
+    onCrearAsistencia: () -> Unit,
     onAbrirDetalle: (Long) -> Unit,
-    onGenerarQrPayload: () -> String?,
+    onGenerarQr: () -> String?,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
@@ -125,7 +126,7 @@ fun AsistenciaView(
                     },
                     actions = {
                         IconButton(onClick = {
-                            val payload = onGenerarQrPayload() ?: return@IconButton
+                            val payload = onGenerarQr() ?: return@IconButton
                             qrMatriz = generarQrMatriz(payload)
                             mostrarQr = true
                         }) {
@@ -163,7 +164,7 @@ fun AsistenciaView(
                         AppSecondaryButton(text = "Inscritos", onClick = onAbrirInscritos, modifier = Modifier.weight(1f))
                         AppPrimaryButton(
                             text = "Iniciar asistencia",
-                            onClick = onIniciarAsistencia,
+                            onClick = onCrearAsistencia,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -266,7 +267,7 @@ fun AsistenciaView(
                                             }
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Text(
-                                                    text = "Asistencia #${asistencia.id}",
+                                                    text = "Asistencia #$materiaId-${asistencia.id}",
                                                     style = MaterialTheme.typography.titleSmall.copy(fontSize = sizes.cardTitle),
                                                     fontWeight = FontWeight.SemiBold,
                                                     color = MaterialTheme.colorScheme.onSurface

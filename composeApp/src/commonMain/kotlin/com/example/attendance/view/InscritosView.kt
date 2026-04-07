@@ -63,10 +63,17 @@ import com.example.attendance.view.theme.AppTextField
 import com.example.attendance.view.theme.AttendanceThemeTokens
 import kotlinx.coroutines.launch
 
+@Composable
+expect fun rememberCsvPicker(
+    onCsvContent: (String) -> Unit,
+    onError: (String) -> Unit
+): () -> Unit
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InscritosView(
     model: InscritoModel,
+    materiaId: Long,
     onVolver: () -> Unit,
     onAgregarEstudiante: (String, String, String) -> Boolean,
     onImportarCsv: (String) -> Unit,

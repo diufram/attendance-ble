@@ -4,7 +4,7 @@ import com.example.attendance.db.AttendanceDatabase
 
 class DocenteModel(
     val id: Long = 0,
-    val carnetIdentidad: Int = 0,
+    val carnetIdentidad: Long = 0,
     val nombre: String = "",
     val apellido: String = "",
     private val db: AttendanceDatabase? = null
@@ -14,7 +14,7 @@ class DocenteModel(
     fun insertar(docente: DocenteModel): Long {
         val database = requireDb()
         database.docenteQueries.insertDocente(
-            carnet_identidad = docente.carnetIdentidad.toLong(),
+            carnet_identidad = docente.carnetIdentidad,
             nombre = docente.nombre,
             apellido = docente.apellido
         )
@@ -28,7 +28,7 @@ class DocenteModel(
             ?.let {
                 DocenteModel(
                     id = it.id,
-                    carnetIdentidad = it.carnet_identidad.toInt(),
+                    carnetIdentidad = it.carnet_identidad,
                     nombre = it.nombre,
                     apellido = it.apellido
                 )
@@ -42,7 +42,7 @@ class DocenteModel(
             ?.let {
                 DocenteModel(
                     id = it.id,
-                    carnetIdentidad = it.carnet_identidad.toInt(),
+                    carnetIdentidad = it.carnet_identidad,
                     nombre = it.nombre,
                     apellido = it.apellido
                 )
@@ -56,7 +56,7 @@ class DocenteModel(
             .map {
                 DocenteModel(
                     id = it.id,
-                    carnetIdentidad = it.carnet_identidad.toInt(),
+                    carnetIdentidad = it.carnet_identidad,
                     nombre = it.nombre,
                     apellido = it.apellido
                 )

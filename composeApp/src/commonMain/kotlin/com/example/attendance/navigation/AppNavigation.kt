@@ -10,16 +10,16 @@ object AppRoutes {
     const val ASISTENCIA = "asistencia"
     const val INSCRITOS = "inscritos"
     const val ASISTENCIA_DETALLE = "asistencia_detalle"
+
+    const val ASISTENCIA_WITH_ID = "asistencia/{materiaId}"
+    const val INSCRITOS_WITH_ID = "inscritos/{materiaId}"
+    const val ASISTENCIA_DETALLE_WITH_ID = "asistencia_detalle/{materiaId}/{asistenciaId}"
 }
 
 class AppNavigation(
     private val navController: NavHostController,
     private val isNavigationLocked: () -> Boolean,
-    private val lockNavigation: () -> Unit,
-    private val onIrMateriaDocenteView: () -> Unit = {},
-    private val onIrMateriaEstudianteView: () -> Unit = {},
-    private val onIrLoginView: () -> Unit = {},
-    private val onIrAsistenciaView: (MateriaModel) -> Unit = {}
+    private val lockNavigation: () -> Unit
 ) {
     fun navigateSafely(route: String) {
         if (isNavigationLocked()) return
@@ -43,22 +43,34 @@ class AppNavigation(
     }
 
     fun irMateriaDocenteView() {
-        onIrMateriaDocenteView()
         navigateAndClearStack(AppRoutes.DOCENTE_HOME)
     }
 
     fun irMateriaEstudianteView() {
-        onIrMateriaEstudianteView()
         navigateAndClearStack(AppRoutes.ESTUDIANTE_HOME)
     }
 
     fun irLoginView() {
-        onIrLoginView()
         navigateAndClearStack(AppRoutes.LOGIN)
     }
 
     fun irAsistenciaView(materia: MateriaModel) {
-        onIrAsistenciaView(materia)
-        navigateSafely(AppRoutes.ASISTENCIA)
+        navigateSafely("${AppRoutes.ASISTENCIA}/${materia.id}")
+    }
+
+    fun irInscritosView(materia: MateriaModel) {
+        navigateSafely("${AppRoutes.INSCRITOS}/${materia.id}")
+    }
+
+    fun irAsistenciaDetalleView(materiaId: Long, asistenciaId: Long) {
+        navigateSafely("${AppRoutes.ASISTENCIA_DETALLE}/$materiaId/$asistenciaId")
+    }
+
+    fun irNuevaAsistenciaView(materiaId: Long) {
+        navigateSafely("${AppRoutes.ASISTENCIA_DETALLE}/$materiaId/-1")
+    }
+
+    fun volver() {
+        navController.popBackStack()
     }
 }

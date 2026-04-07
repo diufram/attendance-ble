@@ -1,115 +1,102 @@
 package com.example.attendance
 
 import androidx.compose.runtime.*
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.attendance.controller.LoginController
+import androidx.navigation.navArgument
+import com.example.attendance.controller.AsistenciaDetalleController
+import com.example.attendance.controller.AsistenciaController
+import com.example.attendance.controller.AuthController
+import com.example.attendance.controller.InscritosController
 import com.example.attendance.controller.MateriaDocenteController
 import com.example.attendance.controller.MateriaEstudianteController
 import com.example.attendance.db.AttendanceDatabase
-import com.example.attendance.di.AttendanceContainer
+import com.example.attendance.model.AsistenciaModel
+import com.example.attendance.model.AsistenciaDetalleModel
+import com.example.attendance.model.DocenteModel
+import com.example.attendance.model.EstudianteModel
+import com.example.attendance.model.InscritoModel
+import com.example.attendance.model.MateriaModel
 import com.example.attendance.navigation.AppNavigation
 import com.example.attendance.navigation.AppRoutes
 import com.example.attendance.view.*
 import com.example.attendance.view.theme.AttendanceTheme
-
-interface IAsistenciaView {
-    fun irVolver()
-    fun irInscritos(materia: com.example.attendance.model.MateriaModel)
-    fun irDetalle(asistenciaId: Long)
-    fun irNuevaAsistencia(materiaId: Long)
-}
-
-interface IInscritosView {
-    fun irVolver()
-}
-
-interface IAsistenciaDetalleView {
-    fun irVolver()
-}
-
-object EmptyAsistenciaView : IAsistenciaView {
-    override fun irVolver() = Unit
-    override fun irInscritos(materia: com.example.attendance.model.MateriaModel) = Unit
-    override fun irDetalle(asistenciaId: Long) = Unit
-    override fun irNuevaAsistencia(materiaId: Long) = Unit
-}
-
-object EmptyInscritosView : IInscritosView {
-    override fun irVolver() = Unit
-}
-
-object EmptyAsistenciaDetalleView : IAsistenciaDetalleView {
-    override fun irVolver() = Unit
-}
 
 @Composable
 fun App(db: AttendanceDatabase) {
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     var navigationLocked by remember { mutableStateOf(false) }
-    val container = remember { AttendanceContainer(db) }
-    val asistenciaController = container.asistenciaController
-    val asistenciaDetalleController = container.asistenciaDetalleController
-    val inscritosController = container.inscritosController
-    val materiaModel = container.materiaModel
-    val asistenciaModel = container.asistenciaModel
-    val inscritoModel = container.inscritoModel
-    val detalleAsistenciaModel = container.detalleAsistenciaModel
+
+    val docenteModel = remember { DocenteModel(db = db) }
+    val estudianteModel = remember { EstudianteModel(db = db) }
+    val materiaModel = remember { MateriaModel(db = db) }
+    val inscritoModel = remember { InscritoModel(db = db) }
+    val asistenciaModel = remember { AsistenciaModel(db = db) }
+    val asistenciaDetalleModel = remember { AsistenciaDetalleModel(db = db) }
 
     LaunchedEffect(navBackStackEntry?.destination?.route) {
         navigationLocked = false
     }
 
-    val appNavigation = remember(navController) {
+val appNavigation = remember(navController) {
         AppNavigation(
             navController = navController,
             isNavigationLocked = { navigationLocked },
-            lockNavigation = { navigationLocked = true },
-            onIrMateriaDocenteView = {
-                asistenciaController.limpiar()
-                asistenciaDetalleController.limpiar()
-                inscritosController.limpiar()
-            },
-            onIrMateriaEstudianteView = {
-                asistenciaController.limpiar()
-                asistenciaDetalleController.limpiar()
-                inscritosController.limpiar()
-            },
-            onIrLoginView = {
-                asistenciaController.limpiar()
-                asistenciaDetalleController.limpiar()
-                inscritosController.limpiar()
-            },
-            onIrAsistenciaView = { materia ->
-                asistenciaController.seleccionarMateria(materia)
-            }
+            lockNavigation = { navigationLocked = true }
         )
     }
 
-    val docenteController = remember(container, appNavigation) {
+    val asistenciaDetalleController = remember(appNavigation) {
+        AsistenciaDetalleController(
+            asistenciaModel = asistenciaModel,
+            estudianteModel = estudianteModel,
+            asistenciaDetalleModel = asistenciaDetalleModel,
+            navigator = appNavigation
+        )
+    }
+
+    val asistenciaController = remember(appNavigation) {
+        AsistenciaController(
+            asistenciaModel = asistenciaModel,
+            inscritoModel = inscritoModel,
+            materiaModel = materiaModel,
+            navigator = appNavigation
+        )
+    }
+
+    val docenteController = remember(appNavigation) {
         MateriaDocenteController(
-            materiaModel = container.materiaModel,
+            materiaModel = materiaModel,
             navigator = appNavigation
         )
     }
 
-    val materiaEstudianteController = remember(container, appNavigation) {
+    val materiaEstudianteController = remember(appNavigation) {
         MateriaEstudianteController(
-            materiaModel = container.materiaModel,
-            estudianteModel = container.estudianteModel,
-            inscritoModel = container.inscritoModel,
+            materiaModel = materiaModel,
+            docenteModel = docenteModel,
+            inscritoModel = inscritoModel,
             navigator = appNavigation
         )
     }
 
-    val loginController = remember(container, appNavigation, asistenciaController, asistenciaDetalleController, inscritosController) {
-        LoginController(
-            docenteModel = container.docenteModel,
-            estudianteModel = container.estudianteModel,
-            materiaModel = container.materiaModel,
+    val inscritosController = remember(appNavigation) {
+        InscritosController(
+            estudianteModel = estudianteModel,
+            inscritoModel = inscritoModel,
+            navigator = appNavigation
+        )
+    }
+
+    val authController = remember(appNavigation, asistenciaController, asistenciaDetalleController) {
+        AuthController(
+            docenteModel = docenteModel,
+            estudianteModel = estudianteModel,
+            materiaModel = materiaModel,
             navigator = appNavigation
         )
     }
@@ -118,123 +105,114 @@ fun App(db: AttendanceDatabase) {
         NavHost(navController = navController, startDestination = AppRoutes.LOGIN) {
 
             composable(AppRoutes.LOGIN) {
-                LoginView(onIniciarSesion = loginController::iniciarSesion)
+                LoginView(
+                    onLogin = authController::login,
+                    onIrRegistro = { appNavigation.navigateSafely("registro") }
+                )
             }
 
-            composable(AppRoutes.DOCENTE_HOME) {
+            composable("registro") {
+                RegistroView(
+                    onRegistrar = authController::registrar,
+                    onVolver = { appNavigation.volver() }
+                )
+            }
+
+composable(AppRoutes.DOCENTE_HOME) {
                 MateriaDocenteView(
                     model = materiaModel,
-                    onLogout = docenteController::cerrarSesion,
-                    onMateriaClick = docenteController::seleccionarMateria,
+                    onCerrarSesion = docenteController::cerrarSesion,
+                    onMateriaSeleccionada = docenteController::materiaSeleccionada,
                     onCrearMateria = docenteController::crearMateria
                 )
             }
 
-            composable(AppRoutes.ASISTENCIA) {
-                val materia by asistenciaModel.materiaSeleccionada.collectAsState()
+            composable(
+                route = AppRoutes.ASISTENCIA_WITH_ID,
+                arguments = listOf(navArgument("materiaId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val materiaId = backStackEntry.arguments?.getLong("materiaId") ?: return@composable
 
-                if (materia == null) {
-                    LaunchedEffect(Unit) { navController.popBackStack() }
-                    return@composable
-                }
-
-                val asistenciaView = remember(navController, inscritosController, asistenciaDetalleController) {
-                    object : IAsistenciaView {
-                        override fun irVolver() {
-                            navController.popBackStack()
-                        }
-
-                        override fun irInscritos(materia: com.example.attendance.model.MateriaModel) {
-                            inscritosController.seleccionarMateria(materia)
-                            appNavigation.navigateSafely(AppRoutes.INSCRITOS)
-                        }
-
-                        override fun irDetalle(asistenciaId: Long) {
-                            asistenciaDetalleController.seleccionarAsistencia(asistenciaId)
-                            appNavigation.navigateSafely(AppRoutes.ASISTENCIA_DETALLE)
-                        }
-
-                        override fun irNuevaAsistencia(materiaId: Long) {
-                            asistenciaDetalleController.prepararNuevaAsistencia(materiaId)
-                            appNavigation.navigateSafely(AppRoutes.ASISTENCIA_DETALLE)
-                        }
-                    }
-                }
-
-                DisposableEffect(asistenciaView) {
-                    asistenciaController.setView(asistenciaView)
-                    onDispose { asistenciaController.setView(EmptyAsistenciaView) }
+                LaunchedEffect(materiaId) {
+                    asistenciaModel.cargarAsistenciasMateria(materiaId)
                 }
 
                 AsistenciaView(
+                    materiaId = materiaId,
                     model = asistenciaModel,
                     onVolver = asistenciaController::volver,
-                    onAbrirInscritos = asistenciaController::abrirInscritos,
-                    onIniciarAsistencia = asistenciaController::abrirNuevaAsistencia,
-                    onAbrirDetalle = asistenciaController::abrirDetalle,
-                    onGenerarQrPayload = asistenciaController::generarPayloadQrMateria,
+                    onAbrirInscritos = { asistenciaController.abrirInscritos(materiaId) },
+                    onCrearAsistencia = { asistenciaController.abrirNuevaAsistencia(materiaId) },
+                    onAbrirDetalle = { asistenciaId -> asistenciaController.abrirDetalle(materiaId, asistenciaId) },
+                    onGenerarQr = { asistenciaController.generarPayloadQrMateria(materiaId) },
                 )
             }
 
-            composable(AppRoutes.INSCRITOS) {
-                val materia by inscritoModel.materiaSeleccionada.collectAsState()
+            composable(
+                route = AppRoutes.INSCRITOS_WITH_ID,
+                arguments = listOf(navArgument("materiaId") { type = NavType.LongType })
+            ) { backStackEntry ->
+                val materiaId = backStackEntry.arguments?.getLong("materiaId") ?: return@composable
 
-                if (materia == null) {
-                    LaunchedEffect(Unit) { navController.popBackStack() }
-                    return@composable
-                }
-
-                val inscritosView = remember(navController) {
-                    object : IInscritosView {
-                        override fun irVolver() {
-                            navController.popBackStack()
-                        }
-                    }
-                }
-
-                DisposableEffect(inscritosView) {
-                    inscritosController.setView(inscritosView)
-                    onDispose { inscritosController.setView(EmptyInscritosView) }
+                LaunchedEffect(materiaId) {
+                    inscritoModel.cargarInscritosMateria(materiaId)
                 }
 
                 InscritosView(
                     model = inscritoModel,
+                    materiaId = materiaId,
                     onVolver = inscritosController::volver,
-                    onAgregarEstudiante = inscritosController::agregarEstudiante,
-                    onImportarCsv = inscritosController::importarDesdeCsv,
+                    onAgregarEstudiante = { carnet, nombre, apellido -> 
+                        inscritosController.agregarEstudiante(materiaId, carnet, nombre, apellido) 
+                    },
+                    onImportarCsv = { contenido -> 
+                        inscritosController.importarDesdeCsv(materiaId, contenido) 
+                    },
                 )
             }
 
-            composable(AppRoutes.ASISTENCIA_DETALLE) {
-                val asistenciaId by detalleAsistenciaModel.asistenciaSeleccionadaId.collectAsState()
-                val materiaActiva by asistenciaModel.materiaSeleccionada.collectAsState()
+            composable(
+                route = AppRoutes.ASISTENCIA_DETALLE_WITH_ID,
+                arguments = listOf(
+                    navArgument("materiaId") { type = NavType.LongType },
+                    navArgument("asistenciaId") { type = NavType.LongType }
+                )
+            ) { backStackEntry ->
+                val materiaId = backStackEntry.arguments?.getLong("materiaId") ?: return@composable
+                val asistenciaId = backStackEntry.arguments?.getLong("asistenciaId") ?: return@composable
+                val esNueva = asistenciaId == -1L
+
+                val materiaActiva = materiaModel.materiasDocente.value.firstOrNull { it.id == materiaId }
                 val bleActivo by asistenciaDetalleController.bleActivo.collectAsState()
                 val bleEstado by asistenciaDetalleController.bleEstado.collectAsState()
-                val esNueva by detalleAsistenciaModel.esNuevaAsistencia.collectAsState()
 
-                if (asistenciaId == null) {
-                    LaunchedEffect(Unit) { navController.popBackStack() }
-                    return@composable
-                }
-
-                val asistenciaDetalleView = remember(navController) {
-                    object : IAsistenciaDetalleView {
-                        override fun irVolver() {
-                            navController.popBackStack()
+                DisposableEffect(asistenciaId) {
+                    if (esNueva) {
+                        asistenciaDetalleModel.setAsistenciaSeleccionada(-1L, esNueva = true)
+                        val alumnos = estudianteModel.obtenerPorMateria(materiaId)
+                        val detallesTemporales = alumnos.mapIndexed { index, alumno ->
+                            com.example.attendance.model.AsistenciaDetalleModel(
+                                id = index.toLong(),
+                                asistenciaId = -1L,
+                                carnetIdentidad = alumno.carnetIdentidad.toLong(),
+                                estado = "FALTA",
+                                nombreEstudiante = alumno.nombre,
+                                apellidoEstudiante = alumno.apellido,
+                                bitmapIndexEstudiante = index,
+                            )
                         }
+                        asistenciaDetalleModel.cargarDetallesTemporales(detallesTemporales)
+                    } else {
+                        asistenciaDetalleModel.setAsistenciaSeleccionada(asistenciaId, esNueva = false)
+                        asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
                     }
-                }
-
-                DisposableEffect(asistenciaDetalleView) {
-                    asistenciaDetalleController.setView(asistenciaDetalleView)
                     onDispose {
                         asistenciaDetalleController.detenerBleDocente()
-                        asistenciaDetalleController.setView(EmptyAsistenciaDetalleView)
                     }
                 }
 
                 AsistenciaDetalleView(
-                    model = detalleAsistenciaModel,
+                    model = asistenciaDetalleModel,
                     materiaSigla = materiaActiva?.sigla.orEmpty(),
                     materiaGrupo = materiaActiva?.grupo.orEmpty(),
                     bleActivo = bleActivo,
@@ -242,17 +220,17 @@ fun App(db: AttendanceDatabase) {
                     esNuevaAsistencia = esNueva,
                     onVolver = asistenciaDetalleController::volver,
                     onAlternarEstado = asistenciaDetalleController::alternarEstado,
-                    onIniciarBle = {
+                    onIniciarEscaneo = {
                         asistenciaDetalleController.iniciarBleDocente(
                             sigla = materiaActiva?.sigla.orEmpty(),
                             grupo = materiaActiva?.grupo.orEmpty()
                         )
                     },
-                    onDetenerBle = asistenciaDetalleController::detenerBleDocente,
+                    onDetenerEscaneo = asistenciaDetalleController::detenerBleDocente,
                     onGuardarAsistencia = {
-                        val guardado = asistenciaDetalleController.guardarAsistencia()
+                        val guardado = asistenciaDetalleController.guardarAsistencia(materiaId)
                         if (guardado) {
-                            navController.popBackStack()
+                            asistenciaDetalleController.volver()
                         }
                     },
                 )
@@ -264,7 +242,7 @@ fun App(db: AttendanceDatabase) {
                 val bleConfirmacion by materiaEstudianteController.bleConfirmacion.collectAsState()
                 DisposableEffect(materiaEstudianteController) {
                     onDispose {
-                        materiaEstudianteController.detenerBleEstudiante()
+                        materiaEstudianteController.detenerMarcadoAsistencia()
                     }
                 }
 
@@ -273,11 +251,11 @@ fun App(db: AttendanceDatabase) {
                     bleEstado = bleEstado,
                     bleActivoMateriaId = bleActivoMateriaId,
                     bleConfirmacion = bleConfirmacion,
-                    onLogout = materiaEstudianteController::cerrarSesion,
-                    onRegistrarQr = materiaEstudianteController::registrarMateriaDesdeQr,
-                    onIniciarBleMateria = materiaEstudianteController::iniciarBleEstudiante,
-                    onDetenerBle = materiaEstudianteController::detenerBleEstudiante,
-                    onCerrarConfirmacionBle = materiaEstudianteController::cerrarCardConfirmacionBle,
+                    onCerrarSesion = materiaEstudianteController::cerrarSesion,
+                    onRegistrarMateriaDesderQr = materiaEstudianteController::registrarMateriaDesdeQr,
+                    onMarcarAsistencia = materiaEstudianteController::marcarAsistencia,
+                    onDetenerMarcadoAsistencia = materiaEstudianteController::detenerMarcadoAsistencia,
+                    onCerrarConfirmacionAsistencia = materiaEstudianteController::cerrarConfirmacionAsistencia,
                 )
             }
         }

@@ -4,12 +4,11 @@ import com.example.attendance.db.AttendanceDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-data class DetalleAsistenciaModel(
+data class AsistenciaDetalleModel(
     val id: Long = 0,
     val asistenciaId: Long = 0,
-    val estudianteId: Long = 0,
+    val carnetIdentidad: Long = 0,
     val estado: String = "FALTA",
-    val carnetEstudiante: Int = 0,
     val nombreEstudiante: String = "",
     val apellidoEstudiante: String = "",
     val bitmapIndexEstudiante: Int? = null,
@@ -18,8 +17,8 @@ data class DetalleAsistenciaModel(
     private fun requireDb(): AttendanceDatabase = db ?: error("DetalleAsistenciaModel sin db")
     private val _asistenciaSeleccionadaId = MutableStateFlow<Long?>(null)
     val asistenciaSeleccionadaId: StateFlow<Long?> = _asistenciaSeleccionadaId
-    private val _detallesAsistencia = MutableStateFlow<List<DetalleAsistenciaModel>>(emptyList())
-    val detallesAsistencia: StateFlow<List<DetalleAsistenciaModel>> = _detallesAsistencia
+    private val _detallesAsistencia = MutableStateFlow<List<AsistenciaDetalleModel>>(emptyList())
+    val detallesAsistencia: StateFlow<List<AsistenciaDetalleModel>> = _detallesAsistencia
     private val _esNuevaAsistencia = MutableStateFlow(false)
     val esNuevaAsistencia: StateFlow<Boolean> = _esNuevaAsistencia
 
@@ -33,7 +32,7 @@ data class DetalleAsistenciaModel(
         _detallesAsistencia.value = detalles
     }
 
-    fun cargarDetallesTemporales(estudiantes: List<DetalleAsistenciaModel>) {
+    fun cargarDetallesTemporales(estudiantes: List<AsistenciaDetalleModel>) {
         _detallesAsistencia.value = estudiantes
     }
 
@@ -43,13 +42,13 @@ data class DetalleAsistenciaModel(
         _esNuevaAsistencia.value = false
     }
 
-    fun insertar(detalle: DetalleAsistenciaModel) {
+    fun insertar(detalle: AsistenciaDetalleModel) {
         val database = requireDb()
 
         try {
             database.detalleAsistenciaQueries.insertDetalle(
                 asistencia_id = detalle.asistenciaId,
-                estudiante_id = detalle.estudianteId,
+                carnet_identidad = detalle.carnetIdentidad,
                 estado = detalle.estado
             )
         } catch (e: Exception) {
@@ -57,33 +56,32 @@ data class DetalleAsistenciaModel(
         }
     }
 
-    fun obtenerPorId(id: Long): DetalleAsistenciaModel? {
+    fun obtenerPorId(id: Long): AsistenciaDetalleModel? {
         val database = requireDb()
         return database.detalleAsistenciaQueries.getDetalleById(id)
             .executeAsOneOrNull()
             ?.let {
-                DetalleAsistenciaModel(
+                AsistenciaDetalleModel(
                     id = it.id,
                     asistenciaId = it.asistencia_id,
-                    estudianteId = it.estudiante_id,
+carnetIdentidad = it.carnet_identidad,
                     estado = it.estado
                 )
             }
     }
 
-    fun obtenerPorAsistencia(asistenciaId: Long): List<DetalleAsistenciaModel> {
+    fun obtenerPorAsistencia(asistenciaId: Long): List<AsistenciaDetalleModel> {
         val database = requireDb()
 
         val resultados = database.detalleAsistenciaQueries.getDetalleByAsistencia(asistenciaId)
             .executeAsList()
 
         return resultados.map {
-            DetalleAsistenciaModel(
+            AsistenciaDetalleModel(
                 id = it.id,
                 asistenciaId = it.asistencia_id,
-                estudianteId = it.estudiante_id,
+                carnetIdentidad = it.carnet_identidad,
                 estado = it.estado,
-                carnetEstudiante = it.carnet_identidad.toInt(),
                 nombreEstudiante = it.nombre,
                 apellidoEstudiante = it.apellido,
                 bitmapIndexEstudiante = it.bitmap_index?.toInt()
@@ -91,12 +89,12 @@ data class DetalleAsistenciaModel(
         }
     }
 
-    fun actualizarEstado(asistenciaId: Long, estudianteId: Long, estado: String) {
+    fun actualizarEstado(asistenciaId: Long, carnetIdentidad: Long, estado: String) {
         val database = requireDb()
         database.detalleAsistenciaQueries.updateEstado(
             estado = estado,
             asistencia_id = asistenciaId,
-            estudiante_id = estudianteId
+            carnet_identidad = carnetIdentidad
         )
     }
 

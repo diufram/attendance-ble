@@ -10,7 +10,7 @@ class MateriaModel(
     val nombre: String = "",
     val grupo: String = "",
     val periodo: String = "",
-    val docenteId: Long? = null,
+    val docenteCarnet: Long? = null,
     val bitmapIndexEstudiante: Int? = null,
     private val db: AttendanceDatabase? = null
 ) {
@@ -31,7 +31,7 @@ class MateriaModel(
             nombre = materia.nombre,
             grupo = materia.grupo,
             periodo = materia.periodo,
-            docente_id = materia.docenteId
+            docente_carnet = materia.docenteCarnet
         )
     }
 
@@ -46,7 +46,7 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteId = it.docente_id
+                    docenteCarnet = it.docente_carnet
                 )
             }
     }
@@ -62,15 +62,15 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteId = it.docente_id
+                    docenteCarnet = it.docente_carnet
                 )
             }
     }
 
-    fun obtenerPorDocente(docenteId: Long?): List<MateriaModel> {
-        if (docenteId == null) return emptyList()
+    fun obtenerPorDocente(docenteCarnet: Long?): List<MateriaModel> {
+        if (docenteCarnet == null) return emptyList()
         val database = requireDb()
-        return database.materiaQueries.getMateriasByDocente(docenteId)
+        return database.materiaQueries.getMateriasByDocente(docenteCarnet)
             .executeAsList()
             .map {
                 MateriaModel(
@@ -79,13 +79,13 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteId = it.docente_id
+                    docenteCarnet = it.docente_carnet
                 )
             }
     }
 
-    fun cargarMateriasDocente(docenteId: Long?) {
-        _materiasDocente.value = obtenerPorDocente(docenteId)
+    fun cargarMateriasDocente(docenteCarnet: Long?) {
+        _materiasDocente.value = obtenerPorDocente(docenteCarnet)
     }
 
     fun setDocenteActual(docente: DocenteModel?) {
@@ -121,7 +121,7 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteId = it.docente_id
+                    docenteCarnet = it.docente_carnet
                 )
             }
     }
@@ -137,7 +137,7 @@ class MateriaModel(
                     nombre = it.nombre,
                     grupo = it.grupo,
                     periodo = it.periodo,
-                    docenteId = it.docente_id,
+                    docenteCarnet = it.docente_carnet,
                     bitmapIndexEstudiante = it.bitmap_index_estudiante.toInt()
                 )
             }

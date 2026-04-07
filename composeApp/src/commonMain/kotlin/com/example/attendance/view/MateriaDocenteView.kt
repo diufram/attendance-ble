@@ -39,19 +39,19 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 @Composable
 fun MateriaDocenteView(
     model: MateriaModel,
-    onLogout: () -> Unit,
-    onMateriaClick: (Long) -> Unit,
+    onCerrarSesion: () -> Unit,
+    onMateriaSeleccionada: (Long) -> Unit,
     onCrearMateria: (sigla: String, nombre: String, grupo: String, periodo: String) -> Boolean
 ) {
-    val metrics = AttendanceThemeTokens.metrics
-    val sizes = AttendanceThemeTokens.textSizes
-    val materias by model.materiasDocente.collectAsState()
-    var showDialog by remember { mutableStateOf(false) }
-    val crearMateriaSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var sigla by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
     var grupo by remember { mutableStateOf("") }
     var periodo by remember { mutableStateOf("") }
+    var mostrarModalCrearMateria by remember { mutableStateOf(false) }
+
+    val metrics = AttendanceThemeTokens.metrics
+    val sizes = AttendanceThemeTokens.textSizes
+    val materias by model.materiasDocente.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -100,7 +100,7 @@ fun MateriaDocenteView(
                         }
                     },
                     actions = {
-                        TextButton(onClick = onLogout) {
+                        TextButton(onClick = onCerrarSesion) {
                             Icon(Icons.Filled.Logout, contentDescription = null)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Salir")
@@ -117,7 +117,7 @@ fun MateriaDocenteView(
             containerColor = Color.Transparent,
             floatingActionButton = {
                 ExtendedFloatingActionButton(
-                    onClick = { showDialog = true },
+                    onClick = { mostrarModalCrearMateria = true },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
@@ -225,7 +225,7 @@ fun MateriaDocenteView(
                         ) {
                             items(materias) { materia ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().clickable { onMateriaClick(materia.id) },
+                                    modifier = Modifier.fillMaxWidth().clickable { onMateriaSeleccionada(materia.id) },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
@@ -333,10 +333,10 @@ fun MateriaDocenteView(
         }
     }
 
-    if (showDialog) {
+    if (mostrarModalCrearMateria) {
         ModalBottomSheet(
-            onDismissRequest = { showDialog = false },
-            sheetState = crearMateriaSheetState,
+            onDismissRequest = { mostrarModalCrearMateria = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onBackground
         ) {
@@ -389,7 +389,7 @@ fun MateriaDocenteView(
                 ) {
                     AppSecondaryButton(
                         text = "Cancelar",
-                        onClick = { showDialog = false },
+                        onClick = { mostrarModalCrearMateria = false },
                         modifier = Modifier.weight(1f)
                     )
                     AppPrimaryButton(
@@ -401,7 +401,7 @@ fun MateriaDocenteView(
                                 nombre = ""
                                 grupo = ""
                                 periodo = ""
-                                showDialog = false
+                                mostrarModalCrearMateria = false
                             }
                         },
                         modifier = Modifier.weight(1f)

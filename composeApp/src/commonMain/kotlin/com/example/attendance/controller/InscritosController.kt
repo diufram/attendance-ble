@@ -1,42 +1,26 @@
 package com.example.attendance.controller
 
-import com.example.attendance.IInscritosView
 import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
+import com.example.attendance.navigation.AppNavigation
 
 class InscritosController(
     private val estudianteModel: EstudianteModel,
     private val inscritoModel: InscritoModel,
-    private var view: IInscritosView,
+    private val navigator: AppNavigation,
 ) {
-    fun setView(view: IInscritosView) {
-        this.view = view
-    }
-
-    fun seleccionarMateria(materia: MateriaModel) {
-        inscritoModel.setMateriaSeleccionada(materia)
-        inscritoModel.cargarInscritosMateria(materia.id)
-    }
-
-    fun agregarEstudiante(carnetInput: String, nombre: String, apellido: String): Boolean {
+    fun agregarEstudiante(materiaId: Long, carnetInput: String, nombre: String, apellido: String): Boolean {
         try {
             println("=== INICIO agregarEstudiante ===")
             println("Params: carnet='$carnetInput', nombre='$nombre', apellido='$apellido'")
-
-            val materiaId = inscritoModel.materiaSeleccionada.value?.id
-            println("Materia seleccionada ID: $materiaId")
-
-            if (materiaId == null) {
-                println("ERROR: No hay materia seleccionada")
-                return false
-            }
+            println("Materia ID: $materiaId")
 
             val carnet = carnetInput.toIntOrNull()
             println("Carnet parseado: $carnet")
 
             if (carnet == null) {
-                println("ERROR: Carnet inválido")
+                println("ERROR: Carnet invalido")
                 return false
             }
 
@@ -62,7 +46,7 @@ class InscritosController(
             } else {
                 println("Estudiante NO existe, insertando nuevo...")
                 val nuevoEstudiante = EstudianteModel(
-                    carnetIdentidad = carnet,
+                    carnetIdentidad = carnet.toLong(),
                     nombre = nombre.trim(),
                     apellido = apellido.trim()
                 )
@@ -73,9 +57,9 @@ class InscritosController(
                 newId
             }
 
-            println("Creando inscripción para materiaId=$materiaId, estudianteId=$estudianteId")
-            inscritoModel.insertar(InscritoModel(materiaId = materiaId, estudianteId = estudianteId))
-            println("Inscripción creada")
+            println("Creando inscripcion para materiaId=$materiaId, carnet=$carnet")
+            inscritoModel.insertar(InscritoModel(materiaId = materiaId, carnetIdentidad = carnet.toLong()))
+            println("Inscripcion creada")
 
             println("Recargando lista de inscritos...")
             inscritoModel.cargarInscritosMateria(materiaId)
@@ -84,18 +68,17 @@ class InscritosController(
             println("=== FIN agregarEstudiante SUCCESS ===")
             return true
         } catch (e: Exception) {
-            println("=== EXCEPCIÓN CAPTURADA EN agregarEstudiante ===")
+            println("=== EXCEPCION CAPTURADA EN agregarEstudiante ===")
             println("Tipo: ${e::class.simpleName}")
             println("Mensaje: ${e.message}")
             println("Stack trace:")
             e.printStackTrace()
-            println("=== FIN EXCEPCIÓN ===")
+            println("=== FIN EXCEPCION ===")
             return false
         }
     }
 
-    fun importarDesdeCsv(contenidoCsv: String) {
-        val materiaId = inscritoModel.materiaSeleccionada.value?.id ?: return
+    fun importarDesdeCsv(materiaId: Long, contenidoCsv: String) {
         val lineas = contenidoCsv.lines().map { it.trim() }.filter { it.isNotEmpty() }
         for ((index, linea) in lineas.withIndex()) {
             if (linea.isBlank()) continue
@@ -127,22 +110,18 @@ class InscritosController(
                 } else {
                     // Si no existe, insertarlo
                     estudianteModel.insertar(
-                        EstudianteModel(carnetIdentidad = carnet, nombre = nombre.trim(), apellido = apellido.trim())
+                        EstudianteModel(carnetIdentidad = carnet.toLong(), nombre = nombre.trim(), apellido = apellido.trim())
                     )
                 }
                 // Insertar inscripción (el método ya verifica duplicados)
-                inscritoModel.insertar(InscritoModel(materiaId = materiaId, estudianteId = estudianteId))
+                inscritoModel.insertar(InscritoModel(materiaId = materiaId, carnetIdentidad = carnet.toLong()))
             }
         }
-        inscritoModel.cargarInscritosMateria(materiaId)
-    }
-
-    fun limpiar() {
-        inscritoModel.limpiarEstadoMateria()
+inscritoModel.cargarInscritosMateria(materiaId)
     }
 
     fun volver() {
-        view.irVolver()
+        navigator.volver()
     }
 
 }

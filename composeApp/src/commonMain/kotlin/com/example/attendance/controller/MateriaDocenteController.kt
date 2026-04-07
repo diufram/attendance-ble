@@ -12,7 +12,7 @@ class MateriaDocenteController(
         navigator.irLoginView()
     }
 
-    fun seleccionarMateria(materiaId: Long) {
+    fun materiaSeleccionada(materiaId: Long) {
         val materia = materiaModel.materiasDocente.value.firstOrNull { it.id == materiaId } ?: return
         navigator.irAsistenciaView(materia)
     }
@@ -27,10 +27,10 @@ class MateriaDocenteController(
                 nombre = nombre,
                 grupo = grupo,
                 periodo = periodo,
-                docenteId = docente.id
+                docenteCarnet = docente.carnetIdentidad.toLong()
             )
         )
-        materiaModel.cargarMateriasDocente(docente.id)
+        materiaModel.cargarMateriasDocente(docente.carnetIdentidad.toLong())
         return true
     }
 }
