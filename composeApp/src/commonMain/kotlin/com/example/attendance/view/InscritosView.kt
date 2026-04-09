@@ -74,15 +74,14 @@ expect fun rememberCsvPicker(
 fun InscritosView(
     model: InscritoModel,
     materiaId: Long,
+    materiaNombre: String,
     onVolver: () -> Unit,
     onAgregarEstudiante: (String, String, String) -> Boolean,
     onImportarCsv: (String) -> Unit,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materia by model.materiaSeleccionada.collectAsState()
     val inscritos by model.inscritosMateria.collectAsState()
-    val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Inscritos"
     var mostrarDialogoEstudiante by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()

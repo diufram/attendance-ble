@@ -72,7 +72,7 @@ fun MateriaEstudianteView(
 
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materias by model.materiasEstudiante.collectAsState()
+    val materias by model.materiasUsuario.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 

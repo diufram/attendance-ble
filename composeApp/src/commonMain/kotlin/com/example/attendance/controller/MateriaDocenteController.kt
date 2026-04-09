@@ -8,12 +8,12 @@ class MateriaDocenteController(
     private val navigator: AppNavigation,
 ) {
     fun cerrarSesion() {
-        materiaModel.limpiarMateriasDocente()
+        materiaModel.limpiarMaterias()
         navigator.irLoginView()
     }
 
     fun materiaSeleccionada(materiaId: Long) {
-        val materia = materiaModel.materiasDocente.value.firstOrNull { it.id == materiaId } ?: return
+        val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId } ?: return
         navigator.irAsistenciaView(materia)
     }
 
@@ -21,16 +21,18 @@ class MateriaDocenteController(
         val docente = materiaModel.docenteActual.value ?: return false
         if (materiaModel.obtenerPorFormacion(sigla, grupo, periodo) != null) return false
 
+        val carnet = docente.carnetIdentidad
         materiaModel.insertar(
             MateriaModel(
                 sigla = sigla,
                 nombre = nombre,
                 grupo = grupo,
                 periodo = periodo,
-                docenteCarnet = docente.carnetIdentidad.toLong()
+                docenteCarnet = carnet
             )
         )
-        materiaModel.cargarMateriasDocente(docente.carnetIdentidad.toLong())
+        // Recargar materias manteniendo el docente actual
+        materiaModel.cargarMateriasUsuario(carnet.toInt(), esDocente = true, docente = docente)
         return true
     }
 }

@@ -47,26 +47,36 @@ class AsistenciaDetalleController(
     private var frozenEmissionPayloads: List<ByteArray> = emptyList()
     private var emissionCursor: Int = 0
 
-    fun guardarAsistencia(materiaId: Long): Boolean {
+    fun guardarAsistencia(materiaId: Long, asistenciaId: Long, esNueva: Boolean): Boolean {
         return try {
-            val asistenciaId = asistenciaModel.insertarConFechaActual(materiaId)
-
             val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
 
-            detallesActuales.forEach { detalle ->
-                asistenciaDetalleModel.insertar(
-                    AsistenciaDetalleModel(
+            if (esNueva) {
+                // Crear nueva asistencia con sus detalles
+                val nuevaAsistenciaId = asistenciaModel.insertarConFechaActual(materiaId)
+                detallesActuales.forEach { detalle ->
+                    asistenciaDetalleModel.insertar(
+                        AsistenciaDetalleModel(
+                            asistenciaId = nuevaAsistenciaId,
+                            carnetIdentidad = detalle.carnetIdentidad,
+                            estado = detalle.estado
+                        )
+                    )
+                }
+                asistenciaDetalleModel.cargarDetallesAsistencia(nuevaAsistenciaId)
+            } else {
+                // Actualizar detalles de asistencia existente
+                detallesActuales.forEach { detalle ->
+                    asistenciaDetalleModel.actualizarEstado(
                         asistenciaId = asistenciaId,
                         carnetIdentidad = detalle.carnetIdentidad,
                         estado = detalle.estado
                     )
-                )
+                }
+                asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
             }
 
-            asistenciaDetalleModel.setAsistenciaSeleccionada(asistenciaId, esNueva = false)
-            asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
             asistenciaModel.cargarAsistenciasMateria(materiaId)
-
             true
         } catch (e: Exception) {
             false
@@ -74,44 +84,30 @@ class AsistenciaDetalleController(
     }
 
     fun alternarEstado(carnetIdentidad: Long, estadoActual: String) {
-        val asistenciaId = asistenciaDetalleModel.asistenciaSeleccionadaId.value ?: return
-        val esNueva = asistenciaDetalleModel.esNuevaAsistencia.value
         val nuevoEstado = if (estadoActual == "PRESENTE") "FALTA" else "PRESENTE"
 
-        if (esNueva) {
-            val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
-            val detallesActualizados = detallesActuales.map { detalle ->
-                if (detalle.carnetIdentidad == carnetIdentidad) {
-                    detalle.copy(estado = nuevoEstado)
-                } else {
-                    detalle
-                }
+        // Siempre actualizar solo en memoria, sin guardar en BD
+        val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
+        val detallesActualizados = detallesActuales.map { detalle ->
+            if (detalle.carnetIdentidad == carnetIdentidad) {
+                detalle.copy(estado = nuevoEstado)
+            } else {
+                detalle
             }
-            asistenciaDetalleModel.cargarDetallesTemporales(detallesActualizados)
+        }
+        asistenciaDetalleModel.cargarDetallesTemporales(detallesActualizados)
 
-            val detalle = detallesActuales.firstOrNull { it.carnetIdentidad == carnetIdentidad }
-            val bitmapIndex = detalle?.bitmapIndexEstudiante
-            if (bitmapIndex != null) {
-                val changed = bleSession?.setPresence(bitmapIndex, nuevoEstado == "PRESENTE") == true
-                if (changed) bitmapDirty = true
-            }
-        } else {
-            asistenciaDetalleModel.actualizarEstado(asistenciaId, carnetIdentidad, nuevoEstado)
-            asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
-
-            val detalle = asistenciaDetalleModel.detallesAsistencia.value.firstOrNull { it.carnetIdentidad == carnetIdentidad }
-            val bitmapIndex = detalle?.bitmapIndexEstudiante
-            if (bitmapIndex != null) {
-                val changed = bleSession?.setPresence(bitmapIndex, nuevoEstado == "PRESENTE") == true
-                if (changed) bitmapDirty = true
-            }
+        // Actualizar sesión BLE si está activa
+        val detalle = detallesActuales.firstOrNull { it.carnetIdentidad == carnetIdentidad }
+        val bitmapIndex = detalle?.bitmapIndexEstudiante
+        if (bitmapIndex != null) {
+            val changed = bleSession?.setPresence(bitmapIndex, nuevoEstado == "PRESENTE") == true
+            if (changed) bitmapDirty = true
         }
     }
 
-    fun iniciarBleDocente(sigla: String, grupo: String): String? {
+    fun iniciarBleDocente(sigla: String, grupo: String, asistenciaId: Long, esNueva: Boolean): String? {
         if (sigla.isBlank() || grupo.isBlank()) return "No hay materia activa para BLE"
-        val asistenciaId = asistenciaDetalleModel.asistenciaSeleccionadaId.value
-            ?: return "No hay asistencia seleccionada"
 
         val detalles = asistenciaDetalleModel.detallesAsistencia.value
         if (detalles.isEmpty()) return "No hay estudiantes para iniciar BLE"
@@ -196,7 +192,8 @@ class AsistenciaDetalleController(
                             return@startScanning
                         }
 
-                        if (asistenciaDetalleModel.esNuevaAsistencia.value) {
+                        // Usar el parámetro esNueva en lugar de leer del model
+                        if (esNueva) {
                             val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
                             val detallesActualizados = detallesActuales.map { item ->
                                 if (item.carnetIdentidad == detalle.carnetIdentidad) {

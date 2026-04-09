@@ -51,7 +51,7 @@ fun MateriaDocenteView(
 
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materias by model.materiasDocente.collectAsState()
+    val materias by model.materiasUsuario.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(

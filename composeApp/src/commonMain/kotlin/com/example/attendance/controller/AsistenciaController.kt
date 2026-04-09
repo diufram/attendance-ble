@@ -1,10 +1,10 @@
 package com.example.attendance.controller
 
 import com.example.attendance.model.AsistenciaModel
-import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.navigation.AppNavigation
+import com.example.attendance.util.QrUtils
 
 class AsistenciaController(
     private val asistenciaModel: AsistenciaModel,
@@ -17,7 +17,7 @@ class AsistenciaController(
     }
 
     fun abrirInscritos(materiaId: Long) {
-        val materia = materiaModel.materiasDocente.value.firstOrNull { it.id == materiaId } ?: return
+        val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId } ?: return
         navigator.irInscritosView(materia)
     }
 
@@ -29,9 +29,11 @@ class AsistenciaController(
         navigator.irAsistenciaDetalleView(materiaId, asistenciaId)
     }
 
-    fun generarPayloadQrMateria(materiaId: Long): String? {
-        val materia = materiaModel.materiasDocente.value.firstOrNull { it.id == materiaId } ?: return null
+    fun generarQr(materiaId: Long): String? {
+        val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId } ?: return null
         val docente = materiaModel.docenteActual.value
-        return inscritoModel.construirPayloadQrMateria(materia, docente)
+        val inscritos = inscritoModel.obtenerPorMateria(materiaId)
+            .map { it.carnetIdentidad to it.bitMapIndex }
+        return QrUtils.construirPayloadQrMateria(materia, docente, inscritos)
     }
 }

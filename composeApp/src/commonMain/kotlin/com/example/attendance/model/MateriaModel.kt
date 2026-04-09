@@ -15,14 +15,20 @@ class MateriaModel(
     private val db: AttendanceDatabase? = null
 ) {
     private fun requireDb(): AttendanceDatabase = db ?: error("MateriaModel sin db")
+    
+    // Información de sesión del usuario actual
+    private val _usuarioCarnet = MutableStateFlow<Int?>(null)
+    val usuarioCarnet: StateFlow<Int?> = _usuarioCarnet
+    
+    private val _esDocente = MutableStateFlow<Boolean?>(null)
+    val esDocente: StateFlow<Boolean?> = _esDocente
+    
     private val _docenteActual = MutableStateFlow<DocenteModel?>(null)
     val docenteActual: StateFlow<DocenteModel?> = _docenteActual
-    private val _materiasDocente = MutableStateFlow<List<MateriaModel>>(emptyList())
-    val materiasDocente: StateFlow<List<MateriaModel>> = _materiasDocente
-    private val _materiasEstudiante = MutableStateFlow<List<MateriaModel>>(emptyList())
-    val materiasEstudiante: StateFlow<List<MateriaModel>> = _materiasEstudiante
-    private val _estudianteActualCarnet = MutableStateFlow<Int?>(null)
-    val estudianteActualCarnet: StateFlow<Int?> = _estudianteActualCarnet
+    
+    // Materias del usuario actual (unificado)
+    private val _materiasUsuario = MutableStateFlow<List<MateriaModel>>(emptyList())
+    val materiasUsuario: StateFlow<List<MateriaModel>> = _materiasUsuario
 
     fun insertar(materia: MateriaModel) {
         val database = requireDb()
@@ -34,80 +40,48 @@ class MateriaModel(
             docente_carnet = materia.docenteCarnet
         )
     }
-
-    fun obtenerPorId(id: Long): MateriaModel? {
+    
+    fun cargarMateriasUsuario(carnet: Int, esDocente: Boolean, docente: DocenteModel? = null) {
         val database = requireDb()
-        return database.materiaQueries.getMateriaById(id)
-            .executeAsOneOrNull()
-            ?.let {
-                MateriaModel(
-                    id = it.id,
-                    sigla = it.sigla,
-                    nombre = it.nombre,
-                    grupo = it.grupo,
-                    periodo = it.periodo,
-                    docenteCarnet = it.docente_carnet
-                )
-            }
-    }
-
-    fun obtenerTodos(): List<MateriaModel> {
-        val database = requireDb()
-        return database.materiaQueries.getAllMaterias()
-            .executeAsList()
-            .map {
-                MateriaModel(
-                    id = it.id,
-                    sigla = it.sigla,
-                    nombre = it.nombre,
-                    grupo = it.grupo,
-                    periodo = it.periodo,
-                    docenteCarnet = it.docente_carnet
-                )
-            }
-    }
-
-    fun obtenerPorDocente(docenteCarnet: Long?): List<MateriaModel> {
-        if (docenteCarnet == null) return emptyList()
-        val database = requireDb()
-        return database.materiaQueries.getMateriasByDocente(docenteCarnet)
-            .executeAsList()
-            .map {
-                MateriaModel(
-                    id = it.id,
-                    sigla = it.sigla,
-                    nombre = it.nombre,
-                    grupo = it.grupo,
-                    periodo = it.periodo,
-                    docenteCarnet = it.docente_carnet
-                )
-            }
-    }
-
-    fun cargarMateriasDocente(docenteCarnet: Long?) {
-        _materiasDocente.value = obtenerPorDocente(docenteCarnet)
-    }
-
-    fun setDocenteActual(docente: DocenteModel?) {
+        _usuarioCarnet.value = carnet
+        _esDocente.value = esDocente
         _docenteActual.value = docente
+
+        _materiasUsuario.value = if (esDocente) {
+            database.materiaQueries.getMateriasByDocente(carnet.toLong())
+                .executeAsList()
+                .map {
+                    MateriaModel(
+                        id = it.id,
+                        sigla = it.sigla,
+                        nombre = it.nombre,
+                        grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteCarnet = it.docente_carnet
+                    )
+                }
+        } else {
+            database.inscritoQueries.getMateriasByEstudiante(carnet.toLong())
+                .executeAsList()
+                .map {
+                    MateriaModel(
+                        id = it.id,
+                        sigla = it.sigla,
+                        nombre = it.nombre,
+                        grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteCarnet = it.docente_carnet,
+                        bitmapIndexEstudiante = it.bitmap_index_estudiante.toInt()
+                    )
+                }
+        }
     }
 
-    fun limpiarMateriasDocente() {
-        _materiasDocente.value = emptyList()
+    fun limpiarMaterias() {
+        _materiasUsuario.value = emptyList()
+        _usuarioCarnet.value = null
+        _esDocente.value = null
         _docenteActual.value = null
-    }
-
-    fun setEstudianteActualCarnet(carnet: Int?) {
-        _estudianteActualCarnet.value = carnet
-    }
-
-    fun cargarMateriasEstudiante(carnet: Int) {
-        _materiasEstudiante.value = obtenerPorEstudiante(carnet)
-    }
-
-    fun limpiarMateriasEstudiante() {
-        _materiasEstudiante.value = emptyList()
-        _estudianteActualCarnet.value = null
     }
 
     fun obtenerPorFormacion(sigla: String, grupo: String, periodo: String): MateriaModel? {
@@ -125,38 +99,4 @@ class MateriaModel(
                 )
             }
     }
-
-    fun obtenerPorEstudiante(carnet: Int): List<MateriaModel> {
-        val database = requireDb()
-        return database.inscritoQueries.getMateriasByEstudiante(carnet.toLong())
-            .executeAsList()
-            .map {
-                MateriaModel(
-                    id = it.id,
-                    sigla = it.sigla,
-                    nombre = it.nombre,
-                    grupo = it.grupo,
-                    periodo = it.periodo,
-                    docenteCarnet = it.docente_carnet,
-                    bitmapIndexEstudiante = it.bitmap_index_estudiante.toInt()
-                )
-            }
-    }
-
-    fun actualizar(materia: MateriaModel) {
-        val database = requireDb()
-        database.materiaQueries.updateMateria(
-            sigla = materia.sigla,
-            nombre = materia.nombre,
-            grupo = materia.grupo,
-            periodo = materia.periodo,
-            id = materia.id
-        )
-    }
-
-    fun eliminar(id: Long) {
-        val database = requireDb()
-        database.materiaQueries.deleteMateria(id)
-    }
-
 }

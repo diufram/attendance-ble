@@ -15,17 +15,9 @@ data class AsistenciaDetalleModel(
     private val db: AttendanceDatabase? = null
 ) {
     private fun requireDb(): AttendanceDatabase = db ?: error("DetalleAsistenciaModel sin db")
-    private val _asistenciaSeleccionadaId = MutableStateFlow<Long?>(null)
-    val asistenciaSeleccionadaId: StateFlow<Long?> = _asistenciaSeleccionadaId
+    
     private val _detallesAsistencia = MutableStateFlow<List<AsistenciaDetalleModel>>(emptyList())
     val detallesAsistencia: StateFlow<List<AsistenciaDetalleModel>> = _detallesAsistencia
-    private val _esNuevaAsistencia = MutableStateFlow(false)
-    val esNuevaAsistencia: StateFlow<Boolean> = _esNuevaAsistencia
-
-    fun setAsistenciaSeleccionada(asistenciaId: Long?, esNueva: Boolean = false) {
-        _asistenciaSeleccionadaId.value = asistenciaId
-        _esNuevaAsistencia.value = esNueva
-    }
 
     fun cargarDetallesAsistencia(asistenciaId: Long) {
         val detalles = obtenerPorAsistencia(asistenciaId)
@@ -34,12 +26,6 @@ data class AsistenciaDetalleModel(
 
     fun cargarDetallesTemporales(estudiantes: List<AsistenciaDetalleModel>) {
         _detallesAsistencia.value = estudiantes
-    }
-
-    fun limpiarEstadoAsistencia() {
-        _asistenciaSeleccionadaId.value = null
-        _detallesAsistencia.value = emptyList()
-        _esNuevaAsistencia.value = false
     }
 
     fun insertar(detalle: AsistenciaDetalleModel) {
@@ -55,21 +41,7 @@ data class AsistenciaDetalleModel(
             throw e
         }
     }
-
-    fun obtenerPorId(id: Long): AsistenciaDetalleModel? {
-        val database = requireDb()
-        return database.detalleAsistenciaQueries.getDetalleById(id)
-            .executeAsOneOrNull()
-            ?.let {
-                AsistenciaDetalleModel(
-                    id = it.id,
-                    asistenciaId = it.asistencia_id,
-carnetIdentidad = it.carnet_identidad,
-                    estado = it.estado
-                )
-            }
-    }
-
+    
     fun obtenerPorAsistencia(asistenciaId: Long): List<AsistenciaDetalleModel> {
         val database = requireDb()
 
@@ -96,15 +68,5 @@ carnetIdentidad = it.carnet_identidad,
             asistencia_id = asistenciaId,
             carnet_identidad = carnetIdentidad
         )
-    }
-
-    fun eliminar(id: Long) {
-        val database = requireDb()
-        database.detalleAsistenciaQueries.deleteDetalle(id)
-    }
-
-    fun eliminarPorAsistencia(asistenciaId: Long) {
-        val database = requireDb()
-        database.detalleAsistenciaQueries.deleteDetalleByAsistencia(asistenciaId)
     }
 }

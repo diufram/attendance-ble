@@ -12,14 +12,8 @@ class InscritoModel(
     private val db: AttendanceDatabase? = null
 ) {
     private fun requireDb(): AttendanceDatabase = db ?: error("InscritoModel sin db")
-    private val _materiaSeleccionada = MutableStateFlow<MateriaModel?>(null)
-    val materiaSeleccionada: StateFlow<MateriaModel?> = _materiaSeleccionada
     private val _inscritosMateria = MutableStateFlow<List<EstudianteModel>>(emptyList())
     val inscritosMateria: StateFlow<List<EstudianteModel>> = _inscritosMateria
-
-    fun setMateriaSeleccionada(materia: MateriaModel?) {
-        _materiaSeleccionada.value = materia
-    }
 
     fun cargarInscritosMateria(materiaId: Long) {
         val database = requireDb()
@@ -50,30 +44,6 @@ class InscritoModel(
             }
     }
 
-    fun construirPayloadQrMateria(materia: MateriaModel, docente: DocenteModel?): String {
-        val docenteInfo = if (docente != null) {
-            "${docente.nombre}|${docente.apellido}|${docente.carnetIdentidad}"
-        } else {
-            "||"
-        }
-
-        val header = listOf(materia.nombre, materia.sigla, materia.grupo, materia.periodo, docenteInfo)
-            .joinToString("|")
-
-        val inscritos = obtenerPorMateria(materia.id)
-            .mapNotNull { inscrito ->
-                "${inscrito.carnetIdentidad}|${inscrito.bitMapIndex}"
-            }
-            .joinToString(";")
-
-        return if (inscritos.isBlank()) header else "$header;$inscritos"
-    }
-
-    fun limpiarEstadoMateria() {
-        _materiaSeleccionada.value = null
-        _inscritosMateria.value = emptyList()
-    }
-
     fun insertar(inscrito: InscritoModel) {
         val database = requireDb()
 
@@ -94,13 +64,6 @@ class InscritoModel(
             bitmap_index = nextIndex.toLong()
         )
     }
-
-    fun existeInscripcion(materiaId: Long, carnetIdentidad: Long): Boolean {
-        val database = requireDb()
-        return database.inscritoQueries.getInscritoByMateriaEstudiante(materiaId, carnetIdentidad)
-            .executeAsOneOrNull() != null
-    }
-
     fun guardarInscripcionConBitmap(materiaId: Long, carnetIdentidad: Long, bitmapIndex: Int) {
         val database = requireDb()
         val existente = database.inscritoQueries.getInscritoByMateriaEstudiante(materiaId, carnetIdentidad)
@@ -121,46 +84,5 @@ class InscritoModel(
                 id = existente.id
             )
         }
-    }
-
-    fun obtenerPorId(id: Long): InscritoModel? {
-        val database = requireDb()
-        return database.inscritoQueries.getInscritoById(id)
-            .executeAsOneOrNull()
-            ?.let {
-                InscritoModel(
-                    id = it.id,
-                    materiaId = it.materia_id,
-                    carnetIdentidad = it.carnet_identidad,
-                    bitMapIndex = it.bitmap_index.toInt()
-                )
-            }
-    }
-
-    fun obtenerTodos(): List<InscritoModel> {
-        val database = requireDb()
-        return database.inscritoQueries.getAllInscritos()
-            .executeAsList()
-            .map {
-                InscritoModel(
-                    id = it.id,
-                    materiaId = it.materia_id,
-                    carnetIdentidad = it.carnet_identidad,
-                    bitMapIndex = it.bitmap_index.toInt()
-                )
-            }
-    }
-
-    fun eliminar(id: Long) {
-        val database = requireDb()
-        database.inscritoQueries.deleteInscrito(id)
-    }
-
-    fun eliminarPorMateriaEstudiante(materiaId: Long, carnetIdentidad: Long) {
-        val database = requireDb()
-        database.inscritoQueries.deleteInscritoByMateriaEstudiante(
-            materia_id = materiaId,
-            carnet_identidad = carnetIdentidad
-        )
     }
 }

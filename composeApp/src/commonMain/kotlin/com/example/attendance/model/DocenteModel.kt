@@ -48,32 +48,4 @@ class DocenteModel(
                 )
             }
     }
-
-    fun obtenerTodos(): List<DocenteModel> {
-        val database = requireDb()
-        return database.docenteQueries.getAllDocentes()
-            .executeAsList()
-            .map {
-                DocenteModel(
-                    id = it.id,
-                    carnetIdentidad = it.carnet_identidad,
-                    nombre = it.nombre,
-                    apellido = it.apellido
-                )
-            }
-    }
-
-    fun actualizar(docente: DocenteModel) {
-        val database = requireDb()
-        database.docenteQueries.updateDocente(
-            nombre = docente.nombre,
-            apellido = docente.apellido,
-            id = docente.id
-        )
-    }
-
-    fun eliminar(id: Long) {
-        val database = requireDb()
-        database.docenteQueries.deleteDocente(id)
-    }
 }

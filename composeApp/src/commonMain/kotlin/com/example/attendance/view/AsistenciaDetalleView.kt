@@ -69,7 +69,7 @@ fun AsistenciaDetalleView(
     onAlternarEstado: (Long, String) -> Unit,
     onIniciarEscaneo: () -> Unit,
     onDetenerEscaneo: () -> Unit,
-    onGuardarAsistencia: () -> Unit,
+    onGuardar: () -> Unit,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
@@ -131,14 +131,12 @@ fun AsistenciaDetalleView(
                         }
                     },
                     actions = {
-                        if (esNuevaAsistencia) {
-                            IconButton(onClick = onGuardarAsistencia) {
-                                Icon(
-                                    imageVector = Icons.Filled.Save,
-                                    contentDescription = "Guardar asistencia",
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
+                        IconButton(onClick = onGuardar) {
+                            Icon(
+                                imageVector = Icons.Filled.Save,
+                                contentDescription = "Guardar asistencia",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.topAppBarColors(

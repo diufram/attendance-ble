@@ -66,21 +66,6 @@ class EstudianteModel(
                 )
             }
     }
-
-    fun obtenerTodos(): List<EstudianteModel> {
-        val database = requireDb()
-        return database.estudianteQueries.getAllEstudiantes()
-            .executeAsList()
-            .map {
-                EstudianteModel(
-                    id = it.id,
-                    carnetIdentidad = it.carnet_identidad,
-                    nombre = it.nombre,
-                    apellido = it.apellido
-                )
-            }
-    }
-
     fun obtenerPorMateria(materiaId: Long): List<EstudianteModel> {
         val database = requireDb()
 
@@ -105,10 +90,5 @@ class EstudianteModel(
             apellido = estudiante.apellido,
             id = estudiante.id
         )
-    }
-
-    fun eliminar(id: Long) {
-        val database = requireDb()
-        database.estudianteQueries.deleteEstudiante(id)
     }
 }

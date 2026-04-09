@@ -42,7 +42,7 @@ fun App(db: AttendanceDatabase) {
         navigationLocked = false
     }
 
-val appNavigation = remember(navController) {
+    val appNavigation = remember(navController) {
         AppNavigation(
             navController = navController,
             isNavigationLocked = { navigationLocked },
@@ -118,7 +118,7 @@ val appNavigation = remember(navController) {
                 )
             }
 
-composable(AppRoutes.DOCENTE_HOME) {
+            composable(AppRoutes.DOCENTE_HOME) {
                 MateriaDocenteView(
                     model = materiaModel,
                     onCerrarSesion = docenteController::cerrarSesion,
@@ -129,9 +129,15 @@ composable(AppRoutes.DOCENTE_HOME) {
 
             composable(
                 route = AppRoutes.ASISTENCIA_WITH_ID,
-                arguments = listOf(navArgument("materiaId") { type = NavType.LongType })
+                arguments = listOf(navArgument("materiaId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val materiaId = backStackEntry.arguments?.getLong("materiaId") ?: return@composable
+                val args = backStackEntry.arguments
+                val materiaId = args?.getString("materiaId")?.toLongOrNull()
+                    ?: return@composable
+
+                val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId }
+                val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Asistencia"
+                val materiaQrDetalle = materia?.let { "${it.nombre} - ${it.sigla} - ${it.grupo}" } ?: materiaNombre
 
                 LaunchedEffect(materiaId) {
                     asistenciaModel.cargarAsistenciasMateria(materiaId)
@@ -139,20 +145,27 @@ composable(AppRoutes.DOCENTE_HOME) {
 
                 AsistenciaView(
                     materiaId = materiaId,
+                    materiaNombre = materiaNombre,
+                    materiaQrDetalle = materiaQrDetalle,
                     model = asistenciaModel,
                     onVolver = asistenciaController::volver,
-                    onAbrirInscritos = { asistenciaController.abrirInscritos(materiaId) },
-                    onCrearAsistencia = { asistenciaController.abrirNuevaAsistencia(materiaId) },
+                    onIrInscritos = { asistenciaController.abrirInscritos(materiaId) },
+                    onIrCrearAsistencia = { asistenciaController.abrirNuevaAsistencia(materiaId) },
                     onAbrirDetalle = { asistenciaId -> asistenciaController.abrirDetalle(materiaId, asistenciaId) },
-                    onGenerarQr = { asistenciaController.generarPayloadQrMateria(materiaId) },
+                    onGenerarQr = { asistenciaController.generarQr(materiaId) },
                 )
             }
 
             composable(
                 route = AppRoutes.INSCRITOS_WITH_ID,
-                arguments = listOf(navArgument("materiaId") { type = NavType.LongType })
+                arguments = listOf(navArgument("materiaId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val materiaId = backStackEntry.arguments?.getLong("materiaId") ?: return@composable
+                val args = backStackEntry.arguments
+                val materiaId = args?.getString("materiaId")?.toLongOrNull() 
+                    ?: return@composable
+
+                val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId }
+                val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Inscritos"
 
                 LaunchedEffect(materiaId) {
                     inscritoModel.cargarInscritosMateria(materiaId)
@@ -161,6 +174,7 @@ composable(AppRoutes.DOCENTE_HOME) {
                 InscritosView(
                     model = inscritoModel,
                     materiaId = materiaId,
+                    materiaNombre = materiaNombre,
                     onVolver = inscritosController::volver,
                     onAgregarEstudiante = { carnet, nombre, apellido -> 
                         inscritosController.agregarEstudiante(materiaId, carnet, nombre, apellido) 
@@ -174,27 +188,29 @@ composable(AppRoutes.DOCENTE_HOME) {
             composable(
                 route = AppRoutes.ASISTENCIA_DETALLE_WITH_ID,
                 arguments = listOf(
-                    navArgument("materiaId") { type = NavType.LongType },
-                    navArgument("asistenciaId") { type = NavType.LongType }
+                    navArgument("materiaId") { type = NavType.StringType },
+                    navArgument("asistenciaId") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val materiaId = backStackEntry.arguments?.getLong("materiaId") ?: return@composable
-                val asistenciaId = backStackEntry.arguments?.getLong("asistenciaId") ?: return@composable
+                val args = backStackEntry.arguments
+                val materiaId = args?.getString("materiaId")?.toLongOrNull() 
+                    ?: return@composable
+                val asistenciaId = args?.getString("asistenciaId")?.toLongOrNull() 
+                    ?: return@composable
                 val esNueva = asistenciaId == -1L
 
-                val materiaActiva = materiaModel.materiasDocente.value.firstOrNull { it.id == materiaId }
+                val materiaActiva = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId }
                 val bleActivo by asistenciaDetalleController.bleActivo.collectAsState()
                 val bleEstado by asistenciaDetalleController.bleEstado.collectAsState()
 
                 DisposableEffect(asistenciaId) {
                     if (esNueva) {
-                        asistenciaDetalleModel.setAsistenciaSeleccionada(-1L, esNueva = true)
                         val alumnos = estudianteModel.obtenerPorMateria(materiaId)
                         val detallesTemporales = alumnos.mapIndexed { index, alumno ->
                             com.example.attendance.model.AsistenciaDetalleModel(
                                 id = index.toLong(),
                                 asistenciaId = -1L,
-                                carnetIdentidad = alumno.carnetIdentidad.toLong(),
+                                carnetIdentidad = alumno.carnetIdentidad,
                                 estado = "FALTA",
                                 nombreEstudiante = alumno.nombre,
                                 apellidoEstudiante = alumno.apellido,
@@ -203,7 +219,6 @@ composable(AppRoutes.DOCENTE_HOME) {
                         }
                         asistenciaDetalleModel.cargarDetallesTemporales(detallesTemporales)
                     } else {
-                        asistenciaDetalleModel.setAsistenciaSeleccionada(asistenciaId, esNueva = false)
                         asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
                     }
                     onDispose {
@@ -223,12 +238,14 @@ composable(AppRoutes.DOCENTE_HOME) {
                     onIniciarEscaneo = {
                         asistenciaDetalleController.iniciarBleDocente(
                             sigla = materiaActiva?.sigla.orEmpty(),
-                            grupo = materiaActiva?.grupo.orEmpty()
+                            grupo = materiaActiva?.grupo.orEmpty(),
+                            asistenciaId = asistenciaId,
+                            esNueva = esNueva
                         )
                     },
                     onDetenerEscaneo = asistenciaDetalleController::detenerBleDocente,
-                    onGuardarAsistencia = {
-                        val guardado = asistenciaDetalleController.guardarAsistencia(materiaId)
+                    onGuardar = {
+                        val guardado = asistenciaDetalleController.guardarAsistencia(materiaId, asistenciaId, esNueva)
                         if (guardado) {
                             asistenciaDetalleController.volver()
                         }

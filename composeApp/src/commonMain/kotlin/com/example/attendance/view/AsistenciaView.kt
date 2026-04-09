@@ -55,19 +55,18 @@ import qrcode.QRCode
 @Composable
 fun AsistenciaView(
     materiaId: Long,
+    materiaNombre: String,
+    materiaQrDetalle: String,
     model: AsistenciaModel,
     onVolver: () -> Unit,
-    onAbrirInscritos: () -> Unit,
-    onCrearAsistencia: () -> Unit,
+    onIrInscritos: () -> Unit,
+    onIrCrearAsistencia: () -> Unit,
     onAbrirDetalle: (Long) -> Unit,
     onGenerarQr: () -> String?,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materia by model.materiaSeleccionada.collectAsState()
     val asistencias by model.asistenciasMateria.collectAsState()
-    val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Asistencia"
-    val materiaQrDetalle = materia?.let { "${it.nombre} - ${it.sigla} - ${it.grupo}" } ?: materiaNombre
     var mostrarQr by remember { mutableStateOf(false) }
     var qrMatriz by remember { mutableStateOf<List<List<Boolean>>>(emptyList()) }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -161,10 +160,10 @@ fun AsistenciaView(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        AppSecondaryButton(text = "Inscritos", onClick = onAbrirInscritos, modifier = Modifier.weight(1f))
+                        AppSecondaryButton(text = "Inscritos", onClick = onIrInscritos, modifier = Modifier.weight(1f))
                         AppPrimaryButton(
-                            text = "Iniciar asistencia",
-                            onClick = onCrearAsistencia,
+                            text = "Crear asistencia",
+                            onClick = onIrCrearAsistencia,
                             modifier = Modifier.weight(1f)
                         )
                     }
