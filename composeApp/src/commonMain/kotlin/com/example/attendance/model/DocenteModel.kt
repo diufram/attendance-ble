@@ -1,17 +1,17 @@
 package com.example.attendance.model
 
-import com.example.attendance.db.AttendanceDatabase
+import com.example.attendance.db.Database
 
 class DocenteModel(
     val id: Long = 0,
-    val carnetIdentidad: Long = 0,
     val nombre: String = "",
     val apellido: String = "",
-    private val db: AttendanceDatabase? = null
+    val carnetIdentidad: Long = 0,
+    private val db: Database? = null
 ) {
-    private fun requireDb(): AttendanceDatabase = db ?: error("DocenteModel sin db")
+    private fun requireDb(): Database = db ?: error("DocenteModel sin db")
 
-    fun insertar(docente: DocenteModel): Long {
+    fun crear(docente: DocenteModel): Long {
         val database = requireDb()
         database.docenteQueries.insertDocente(
             carnet_identidad = docente.carnetIdentidad,
@@ -21,23 +21,9 @@ class DocenteModel(
         return database.docenteQueries.getLastInsertId().executeAsOne()
     }
 
-    fun obtenerPorId(id: Long): DocenteModel? {
+    fun obtenerPorCarnet(carnet: Long): DocenteModel? {
         val database = requireDb()
-        return database.docenteQueries.getDocenteById(id)
-            .executeAsOneOrNull()
-            ?.let {
-                DocenteModel(
-                    id = it.id,
-                    carnetIdentidad = it.carnet_identidad,
-                    nombre = it.nombre,
-                    apellido = it.apellido
-                )
-            }
-    }
-
-    fun obtenerPorCarnet(carnet: Int): DocenteModel? {
-        val database = requireDb()
-        return database.docenteQueries.getDocenteByCarnet(carnet.toLong())
+        return database.docenteQueries.getDocenteByCarnet(carnet)
             .executeAsOneOrNull()
             ?.let {
                 DocenteModel(

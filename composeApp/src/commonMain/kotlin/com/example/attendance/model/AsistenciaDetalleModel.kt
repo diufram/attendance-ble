@@ -1,6 +1,6 @@
 package com.example.attendance.model
 
-import com.example.attendance.db.AttendanceDatabase
+import com.example.attendance.db.Database
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -12,9 +12,9 @@ data class AsistenciaDetalleModel(
     val nombreEstudiante: String = "",
     val apellidoEstudiante: String = "",
     val bitmapIndexEstudiante: Int? = null,
-    private val db: AttendanceDatabase? = null
+    private val db: Database? = null
 ) {
-    private fun requireDb(): AttendanceDatabase = db ?: error("DetalleAsistenciaModel sin db")
+    private fun requireDb(): Database = db ?: error("DetalleAsistenciaModel sin db")
     
     private val _detallesAsistencia = MutableStateFlow<List<AsistenciaDetalleModel>>(emptyList())
     val detallesAsistencia: StateFlow<List<AsistenciaDetalleModel>> = _detallesAsistencia

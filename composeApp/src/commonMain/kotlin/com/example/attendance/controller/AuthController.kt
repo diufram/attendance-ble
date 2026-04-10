@@ -11,15 +11,15 @@ class AuthController(
     private val materiaModel: MateriaModel,
     private val navigator: AppNavigation
 ) {
-    fun login(carnetInput: String): String? {
-        if (carnetInput.isBlank()) return "Ingresa un carnet"
+    fun login(carnet: String): String? {
+        if (carnet.isBlank()) return "Ingresa un carnet"
 
-        val carnet = carnetInput.toIntOrNull() ?: return "Carnet debe ser numérico"
+        val carnet = carnet.toLongOrNull() ?: return "Carnet debe ser numérico"
 
         val docente = docenteModel.obtenerPorCarnet(carnet)
         if (docente != null) {
             materiaModel.limpiarMaterias()
-            materiaModel.cargarMateriasUsuario(carnet, esDocente = true, docente = docente)
+            materiaModel.cargarMaterias(carnet, esDocente = true)
             navigator.irMateriaDocenteView()
             return null
         }
@@ -27,7 +27,7 @@ class AuthController(
         val estudiante = estudianteModel.obtenerPorCarnet(carnet)
         if (estudiante != null) {
             materiaModel.limpiarMaterias()
-            materiaModel.cargarMateriasUsuario(carnet, esDocente = false, docente = null)
+            materiaModel.cargarMaterias(carnet, esDocente = false)
             navigator.irMateriaEstudianteView()
             return null
         }
@@ -35,32 +35,32 @@ class AuthController(
         return "Usuario no encontrado. Regístrate primero"
     }
 
-    fun registrar(carnetInput: String, nombre: String, apellido: String, esDocente: Boolean): String? {
-        if (carnetInput.isBlank()) return "Ingresa un carnet"
+    fun registrar(carnet: String, nombre: String, apellido: String, esDocente: Boolean): String? {
+        if (carnet.isBlank()) return "Ingresa un carnet"
         if (nombre.isBlank()) return "Ingresa el nombre"
         if (apellido.isBlank()) return "Ingresa el apellido"
 
-        val carnet = carnetInput.toIntOrNull() ?: return "Carnet debe ser numérico"
+        val carnet = carnet.toLongOrNull() ?: return "Carnet debe ser numérico"
 
         materiaModel.limpiarMaterias()
         
         if (esDocente) {
-            val docente = docenteModel.obtenerPorCarnet(carnet) ?: run {
-                val docenteId = docenteModel.insertar(
+              docenteModel.obtenerPorCarnet(carnet) ?: run {
+                docenteModel.crear(
                     DocenteModel(
                         carnetIdentidad = carnet.toLong(),
                         nombre = nombre.trim(),
                         apellido = apellido.trim()
                     )
                 )
-                docenteModel.obtenerPorId(docenteId)
+                docenteModel.obtenerPorCarnet(carnet)
                     ?: return "No se pudo registrar el docente"
             }
 
-            materiaModel.cargarMateriasUsuario(carnet, esDocente = true, docente = docente)
+            materiaModel.cargarMaterias(carnet, esDocente = true)
             navigator.irMateriaDocenteView()
         } else {
-            materiaModel.cargarMateriasUsuario(carnet, esDocente = false, docente = null)
+            materiaModel.cargarMaterias(carnet, esDocente = false)
             navigator.irMateriaEstudianteView()
         }
 

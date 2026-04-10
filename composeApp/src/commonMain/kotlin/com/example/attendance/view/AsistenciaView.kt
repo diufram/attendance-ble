@@ -61,7 +61,7 @@ fun AsistenciaView(
     onVolver: () -> Unit,
     onIrInscritos: () -> Unit,
     onIrCrearAsistencia: () -> Unit,
-    onAbrirDetalle: (Long) -> Unit,
+    onAbrirDetalle: (AsistenciaModel) -> Unit,
     onGenerarQr: () -> String?,
 ) {
     val metrics = AttendanceThemeTokens.metrics
@@ -242,7 +242,7 @@ fun AsistenciaView(
                         ) {
                             items(asistencias) { asistencia ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().clickable { onAbrirDetalle(asistencia.id) },
+                                    modifier = Modifier.fillMaxWidth().clickable { onAbrirDetalle(asistencia) },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
                                     border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))

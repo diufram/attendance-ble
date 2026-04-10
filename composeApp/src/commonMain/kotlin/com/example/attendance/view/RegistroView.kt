@@ -31,11 +31,9 @@ fun RegistroView(
     onVolver: () -> Unit
 ) {
     val metrics = AttendanceThemeTokens.metrics
-    val sizes = AttendanceThemeTokens.textSizes
-
-    var carnet by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
+    var carnet by remember { mutableStateOf("") }
     var esDocente by remember { mutableStateOf(false) }
     var error by remember { mutableStateOf("") }
     var submitting by remember { mutableStateOf(false) }

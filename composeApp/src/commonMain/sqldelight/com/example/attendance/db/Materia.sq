@@ -13,6 +13,10 @@ insertMateria:
 INSERT INTO materia(sigla, nombre, grupo, periodo, docente_carnet)
 VALUES (?, ?, ?, ?, ?);
 
+insertMateriaOrIgnore:
+INSERT OR IGNORE INTO materia(sigla, nombre, grupo, periodo, docente_carnet)
+VALUES (?, ?, ?, ?, ?);
+
 getMateriaById:
 SELECT * FROM materia WHERE id = ?;
 

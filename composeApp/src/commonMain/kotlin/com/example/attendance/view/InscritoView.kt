@@ -2,10 +2,10 @@ package com.example.attendance.view
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,7 +24,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,8 +32,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
@@ -45,7 +42,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,48 +52,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AppTextField
 import com.example.attendance.view.theme.AttendanceThemeTokens
-import kotlinx.coroutines.launch
-
-@Composable
-expect fun rememberCsvPicker(
-    onCsvContent: (String) -> Unit,
-    onError: (String) -> Unit
-): () -> Unit
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InscritosView(
+fun InscritoView(
     model: InscritoModel,
-    materiaId: Long,
     materiaNombre: String,
     onVolver: () -> Unit,
-    onAgregarEstudiante: (String, String, String) -> Boolean,
-    onImportarCsv: (String) -> Unit,
+    onAgregar: (EstudianteModel) -> Boolean,
+    onEliminar: (EstudianteModel) -> Boolean,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
     val inscritos by model.inscritosMateria.collectAsState()
-    var mostrarDialogoEstudiante by remember { mutableStateOf(false) }
-    val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
-    val abrirSelectorCsv = rememberCsvPicker(
-        onCsvContent = { contenido ->
-            onImportarCsv(contenido)
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar("Archivo CSV importado")
-            }
-        },
-        onError = { mensaje ->
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(mensaje)
-            }
-        }
-    )
+    var mostrarModal by remember { mutableStateOf(false) }
+    var mostrarEliminarModal by remember { mutableStateOf(false) }
+    var estudianteSeleccionado by remember { mutableStateOf<EstudianteModel?>(null) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -124,7 +100,6 @@ fun InscritosView(
         )
 
         Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = {
@@ -171,8 +146,7 @@ fun InscritosView(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        AppSecondaryButton(text = "Agregar", onClick = { mostrarDialogoEstudiante = true }, modifier = Modifier.weight(1f))
-                        AppSecondaryButton(text = "Importar CSV", onClick = abrirSelectorCsv, modifier = Modifier.weight(1f))
+                        AppSecondaryButton(text = "Agregar", onClick = { mostrarModal = true }, modifier = Modifier.weight(1f))
                     }
 
                     Card(
@@ -196,7 +170,7 @@ fun InscritosView(
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
                                 )
                                 Text(
-                                    text = "Puedes agregar manualmente o importar CSV",
+                                    text = "Puedes agregar estudiantes manualmente",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.78f)
                                 )
@@ -239,7 +213,12 @@ fun InscritosView(
                         ) {
                             items(inscritos) { estudiante ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth(),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            estudianteSeleccionado = estudiante
+                                            mostrarEliminarModal = true
+                                        },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
                                     border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))
@@ -293,13 +272,13 @@ fun InscritosView(
         }
     }
 
-    if (mostrarDialogoEstudiante) {
+    if (mostrarModal) {
         var carnet by remember { mutableStateOf("") }
         var nombre by remember { mutableStateOf("") }
         var apellido by remember { mutableStateOf("") }
 
         ModalBottomSheet(
-            onDismissRequest = { mostrarDialogoEstudiante = false },
+            onDismissRequest = { mostrarModal = false },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onBackground
         ) {
@@ -342,21 +321,79 @@ fun InscritosView(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AppSecondaryButton(
                         text = "Cancelar",
-                        onClick = { mostrarDialogoEstudiante = false },
+                        onClick = { mostrarModal = false },
                         modifier = Modifier.weight(1f)
                     )
                     AppPrimaryButton(
                         text = "Guardar",
                         onClick = {
-                            val agregado = onAgregarEstudiante(carnet, nombre, apellido)
+                            val carnetNumerico = carnet.toLongOrNull() ?: return@AppPrimaryButton
+                            val agregado = onAgregar(
+                                EstudianteModel(
+                                    carnetIdentidad = carnetNumerico,
+                                    nombre = nombre,
+                                    apellido = apellido,
+                                )
+                            )
                             if (agregado) {
                                 carnet = ""
                                 nombre = ""
                                 apellido = ""
-                                mostrarDialogoEstudiante = false
+                                mostrarModal = false
                             }
                         },
                         modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
+    }
+
+    if (mostrarEliminarModal && estudianteSeleccionado != null) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                mostrarEliminarModal = false
+                estudianteSeleccionado = null
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = metrics.modalHorizontalPadding, vertical = metrics.modalVerticalPadding),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text("Eliminar inscripción", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = "¿Realmente quieres eliminar a ${estudianteSeleccionado?.nombre} ${estudianteSeleccionado?.apellido}?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    AppSecondaryButton(
+                        text = "Cancelar",
+                        onClick = {
+                            mostrarEliminarModal = false
+                            estudianteSeleccionado = null
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                    AppPrimaryButton(
+                        text = "Eliminar",
+                        onClick = {
+                            val estudiante = estudianteSeleccionado ?: return@AppPrimaryButton
+                            val eliminado = onEliminar(estudiante)
+                            if (eliminado) {
+                                mostrarEliminarModal = false
+                                estudianteSeleccionado = null
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
                     )
                 }
                 Spacer(modifier = Modifier.height(10.dp))

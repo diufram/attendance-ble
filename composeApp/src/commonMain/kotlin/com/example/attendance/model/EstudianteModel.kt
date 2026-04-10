@@ -1,23 +1,23 @@
 package com.example.attendance.model
 
-import com.example.attendance.db.AttendanceDatabase
+import com.example.attendance.db.Database
 
 class EstudianteModel(
     val id: Long = 0,
-    val carnetIdentidad: Long = 0,
     val nombre: String = "",
     val apellido: String = "",
-    private val db: AttendanceDatabase? = null
+    val carnetIdentidad: Long = 0,
+    private val db: Database? = null
 ) {
-    private fun requireDb(): AttendanceDatabase = db ?: error("EstudianteModel sin db")
+    private fun requireDb(): Database = db ?: error("EstudianteModel sin db")
 
-    fun insertar(estudiante: EstudianteModel): Long {
+    fun crear(estudiante: EstudianteModel): Long {
         val database = requireDb()
 
         return try {
             database.estudianteQueries.transactionWithResult {
                 database.estudianteQueries.insertEstudiante(
-                    carnet_identidad = estudiante.carnetIdentidad.toLong(),
+                    carnet_identidad = estudiante.carnetIdentidad,
                     nombre = estudiante.nombre,
                     apellido = estudiante.apellido
                 )
@@ -39,23 +39,9 @@ class EstudianteModel(
         }
     }
 
-    fun obtenerPorId(id: Long): EstudianteModel? {
+    fun obtenerPorCarnet(carnet: Long): EstudianteModel? {
         val database = requireDb()
-        return database.estudianteQueries.getEstudianteById(id)
-            .executeAsOneOrNull()
-            ?.let {
-                EstudianteModel(
-                    id = it.id,
-                    carnetIdentidad = it.carnet_identidad,
-                    nombre = it.nombre,
-                    apellido = it.apellido
-                )
-            }
-    }
-
-    fun obtenerPorCarnet(carnet: Int): EstudianteModel? {
-        val database = requireDb()
-        return database.estudianteQueries.getEstudianteByCarnet(carnet.toLong())
+        return database.estudianteQueries.getEstudianteByCarnet(carnet)
             .executeAsOneOrNull()
             ?.let {
                 EstudianteModel(

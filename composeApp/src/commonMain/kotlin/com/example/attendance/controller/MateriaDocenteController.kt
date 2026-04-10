@@ -7,32 +7,27 @@ class MateriaDocenteController(
     private val materiaModel: MateriaModel,
     private val navigator: AppNavigation,
 ) {
-    fun cerrarSesion() {
-        materiaModel.limpiarMaterias()
-        navigator.irLoginView()
-    }
-
-    fun materiaSeleccionada(materiaId: Long) {
-        val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId } ?: return
+    fun materiaSeleccionada(materia: MateriaModel) {
         navigator.irAsistenciaView(materia)
     }
 
-    fun crearMateria(sigla: String, nombre: String, grupo: String, periodo: String): Boolean {
-        val docente = materiaModel.docenteActual.value ?: return false
-        if (materiaModel.obtenerPorFormacion(sigla, grupo, periodo) != null) return false
-
-        val carnet = docente.carnetIdentidad
-        materiaModel.insertar(
+    fun crear(materia: MateriaModel): Boolean {
+        val carnet = materiaModel.usuarioCarnet.value?.toLong() ?: return false
+        materiaModel.crear(
             MateriaModel(
-                sigla = sigla,
-                nombre = nombre,
-                grupo = grupo,
-                periodo = periodo,
-                docenteCarnet = carnet
+                sigla = materia.sigla,
+                nombre = materia.nombre,
+                grupo = materia.grupo,
+                periodo = materia.periodo,
+                docenteCarnet = carnet,
             )
-        )
-        // Recargar materias manteniendo el docente actual
-        materiaModel.cargarMateriasUsuario(carnet.toInt(), esDocente = true, docente = docente)
+        ) ?: return false
+
+        materiaModel.cargarMaterias(carnet, esDocente = true)
         return true
+    }
+    fun cerrarSesion() {
+        materiaModel.limpiarMaterias()
+        navigator.irLoginView()
     }
 }

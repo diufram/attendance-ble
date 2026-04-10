@@ -1,6 +1,6 @@
 package com.example.attendance.model
 
-import com.example.attendance.db.AttendanceDatabase
+import com.example.attendance.db.Database
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -8,9 +8,9 @@ class AsistenciaModel(
     val id: Long = 0,
     val materiaId: Long = 0,
     val fecha: String = "",
-    private val db: AttendanceDatabase? = null
+    private val db: Database? = null
 ) {
-    private fun requireDb(): AttendanceDatabase = db ?: error("AsistenciaModel sin db")
+    private fun requireDb(): Database = db ?: error("AsistenciaModel sin db")
     private val _asistenciasMateria = MutableStateFlow<List<AsistenciaModel>>(emptyList())
     val asistenciasMateria: StateFlow<List<AsistenciaModel>> = _asistenciasMateria
 
@@ -18,29 +18,17 @@ class AsistenciaModel(
         _asistenciasMateria.value = listar(materiaId)
     }
 
-    fun crear(asistencia: AsistenciaModel): Long {
+    fun guardar(asistencia: AsistenciaModel): Long {
         val database = requireDb()
-        database.asistenciaQueries.insertAsistencia(
-            materia_id = asistencia.materiaId,
-            fecha = asistencia.fecha
-        )
-        return database.asistenciaQueries.getLastInsertId().executeAsOne()
-    }
-
-    fun insertarConFechaActual(materiaId: Long): Long {
-        val database = requireDb()
-        return try {
-            database.asistenciaQueries.transactionWithResult {
-                database.asistenciaQueries.insertAsistenciaNow(materia_id = materiaId)
-                val id = database.asistenciaQueries.getLastInsertId().executeAsOne()
-                if (id == 0L) {
-                    throw IllegalStateException("El INSERT no genero un ID valido")
-                }
-                id
-            }
-        } catch (e: Exception) {
-            throw e
+        if (asistencia.fecha.isBlank()) {
+            database.asistenciaQueries.insertAsistenciaNow(materia_id = asistencia.materiaId)
+        } else {
+            database.asistenciaQueries.insertAsistencia(
+                materia_id = asistencia.materiaId,
+                fecha = asistencia.fecha
+            )
         }
+        return database.asistenciaQueries.getLastInsertId().executeAsOne()
     }
 
 

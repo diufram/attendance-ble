@@ -35,39 +35,29 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.attendance.ble.rememberRequestBlePermissions
-import com.example.attendance.controller.MateriaEstudianteController
+import com.example.attendance.ble.BleConfirmacion
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
 import kotlinx.coroutines.launch
-
-@Composable
-expect fun QrScannerView(
-    modifier: Modifier = Modifier,
-    onQrScanned: (String) -> Unit,
-    onError: (String) -> Unit
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaEstudianteView(
     model: MateriaModel,
     bleEstado: String,
     bleActivoMateriaId: Long?,
-    bleConfirmacion: MateriaEstudianteController.BleConfirmacionUi?,
+    bleConfirmacion: BleConfirmacion?,
     onCerrarSesion: () -> Unit,
     onRegistrarMateriaDesderQr: (String) -> String?,
     onMarcarAsistencia: (MateriaModel) -> String?,
     onDetenerMarcadoAsistencia: () -> Unit,
     onCerrarConfirmacionAsistencia: () -> Unit,
 ) {
-    val scannerSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val materiaSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var mostrarEscaner by remember { mutableStateOf(false) }
     var mostrarMateriaSheet by remember { mutableStateOf(false) }
     var materiaSeleccionada by remember { mutableStateOf<MateriaModel?>(null) }
-    var materiaPendienteBle by remember { mutableStateOf<MateriaModel?>(null) }
+    var materiaPendiente by remember { mutableStateOf<MateriaModel?>(null) }
 
 
     val metrics = AttendanceThemeTokens.metrics
@@ -78,7 +68,7 @@ fun MateriaEstudianteView(
 
     val solicitarPermisosBle = rememberRequestBlePermissions(
         onGranted = {
-            val materia = materiaPendienteBle ?: return@rememberRequestBlePermissions
+            val materia = materiaPendiente ?: return@rememberRequestBlePermissions
             val error = onMarcarAsistencia(materia)
             if (error != null) {
                 coroutineScope.launch { snackbarHostState.showSnackbar(error) }
@@ -341,7 +331,7 @@ fun MateriaEstudianteView(
                                                     if (confirmado) {
                                                         onCerrarConfirmacionAsistencia()
                                                     } else {
-                                                        materiaPendienteBle = null
+                                                        materiaPendiente = null
                                                         onDetenerMarcadoAsistencia()
                                                     }
                                                 }
@@ -454,7 +444,7 @@ fun MateriaEstudianteView(
         val materiaActiva = materiaSeleccionada
         ModalBottomSheet(
             onDismissRequest = { mostrarMateriaSheet = false },
-            sheetState = materiaSheetState,
+            sheetState =  rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
@@ -523,7 +513,7 @@ fun MateriaEstudianteView(
                         text = "Marcar",
                         onClick = {
                             if (materiaActiva == null) return@AppPrimaryButton
-                            materiaPendienteBle = materiaActiva
+                            materiaPendiente = materiaActiva
                             solicitarPermisosBle()
                             mostrarMateriaSheet = false
                         },
@@ -537,7 +527,7 @@ fun MateriaEstudianteView(
     if (mostrarEscaner) {
         ModalBottomSheet(
             onDismissRequest = { mostrarEscaner = false },
-            sheetState = scannerSheetState,
+            sheetState =  rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             dragHandle = { BottomSheetDefaults.DragHandle() }
         ) {
@@ -602,3 +592,10 @@ fun MateriaEstudianteView(
         }
     }
 }
+
+@Composable
+expect fun QrScannerView(
+    modifier: Modifier = Modifier,
+    onQrScanned: (String) -> Unit,
+    onError: (String) -> Unit
+)

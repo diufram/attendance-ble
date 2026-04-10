@@ -40,8 +40,8 @@ import com.example.attendance.view.theme.AttendanceThemeTokens
 fun MateriaDocenteView(
     model: MateriaModel,
     onCerrarSesion: () -> Unit,
-    onMateriaSeleccionada: (Long) -> Unit,
-    onCrearMateria: (sigla: String, nombre: String, grupo: String, periodo: String) -> Boolean
+    onMateriaSeleccionada: (MateriaModel) -> Unit,
+    onCrearMateria: (MateriaModel) -> Boolean
 ) {
     var sigla by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
@@ -225,7 +225,7 @@ fun MateriaDocenteView(
                         ) {
                             items(materias) { materia ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().clickable { onMateriaSeleccionada(materia.id) },
+                                    modifier = Modifier.fillMaxWidth().clickable { onMateriaSeleccionada(materia) },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
@@ -395,7 +395,14 @@ fun MateriaDocenteView(
                     AppPrimaryButton(
                         text = "Crear",
                         onClick = {
-                            val creada = onCrearMateria(sigla, nombre, grupo, periodo)
+                            val creada = onCrearMateria(
+                                MateriaModel(
+                                    sigla = sigla.trim(),
+                                    nombre = nombre.trim(),
+                                    grupo = grupo.trim(),
+                                    periodo = periodo.trim(),
+                                )
+                            )
                             if (creada) {
                                 sigla = ""
                                 nombre = ""

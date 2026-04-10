@@ -32,12 +32,22 @@ class BleStudentService {
     private val _estado = MutableStateFlow<BleEstado>(BleEstado.Inactivo)
     val estado: StateFlow<BleEstado> = _estado.asStateFlow()
 
+    private val _bleEstado = MutableStateFlow("BLE inactivo")
+    val bleEstado: StateFlow<String> = _bleEstado.asStateFlow()
+
+    private val _bleActivoMateriaId = MutableStateFlow<Long?>(null)
+    val bleActivoMateriaId: StateFlow<Long?> = _bleActivoMateriaId.asStateFlow()
+
+    private val _bleConfirmacion = MutableStateFlow<BleConfirmacion?>(null)
+    val bleConfirmacion: StateFlow<BleConfirmacion?> = _bleConfirmacion.asStateFlow()
+
     private var session: StudentBleAttendanceSession? = null
     private var advertiseJob: Job? = null
     private var scanJob: Job? = null
     private var warmupStart: kotlin.time.TimeMark? = null
 
     fun iniciarMarcadoAsistencia(
+        materiaId: Long,
         nombreMateria: String,
         sigla: String,
         grupo: String,
@@ -47,8 +57,11 @@ class BleStudentService {
 
         val nuevaSession = StudentBleAttendanceSession(sigla, grupo, bitmapIndex)
         session = nuevaSession
+        _bleActivoMateriaId.value = materiaId
+        _bleConfirmacion.value = null
         warmupStart = TimeSource.Monotonic.markNow()
         _estado.value = BleEstado.Escuchando("Escuchando confirmacion BLE...")
+        _bleEstado.value = "Escuchando confirmacion BLE..."
 
         prepararBle()
 
@@ -62,6 +75,7 @@ class BleStudentService {
                 val payload = session?.studentPayload() ?: break
                 bleTransceiver.startAdvertising(payload) { error ->
                     _estado.value = BleEstado.Error(error)
+                    _bleEstado.value = error
                 }
                 delay(700)
             }
@@ -69,12 +83,24 @@ class BleStudentService {
     }
 
     fun detenerMarcadoAsistencia() {
+        detenerMarcadoAsistenciaInterno(resetEstado = true)
+    }
+
+    fun cerrarConfirmacionAsistencia() {
+        _bleConfirmacion.value = null
+        if (_bleActivoMateriaId.value == null) {
+            _bleEstado.value = "BLE inactivo"
+        }
+    }
+
+    private fun detenerMarcadoAsistenciaInterno(resetEstado: Boolean) {
         scanJob?.cancel()
         scanJob = null
         advertiseJob?.cancel()
         advertiseJob = null
         session = null
         warmupStart = null
+        _bleActivoMateriaId.value = null
         bleTransceiver.stopAll()
 
         scope.launch {
@@ -83,6 +109,9 @@ class BleStudentService {
         }
 
         _estado.value = BleEstado.Inactivo
+        if (resetEstado) {
+            _bleEstado.value = "BLE inactivo"
+        }
     }
 
     fun estaActivo(): Boolean = session != null
@@ -106,6 +135,7 @@ class BleStudentService {
             },
             onError = { error ->
                 _estado.value = BleEstado.Error(error)
+                _bleEstado.value = error
             }
         )
     }
@@ -124,15 +154,17 @@ class BleStudentService {
     ) {
         when (session.onScannedPayload(payload)) {
             StudentBleAttendanceSession.ScanResult.CONFIRMADO -> {
-                _estado.value = BleEstado.Confirmado(
-                    BleConfirmacion(nombreMateria, sigla, grupo)
-                )
-                detenerMarcadoAsistencia()
+                val confirmacion = BleConfirmacion(nombreMateria, sigla, grupo)
+                _estado.value = BleEstado.Confirmado(confirmacion)
+                _bleConfirmacion.value = confirmacion
+                _bleEstado.value = "✓ Asistencia confirmada"
+                detenerMarcadoAsistenciaInterno(resetEstado = false)
             }
 
             StudentBleAttendanceSession.ScanResult.FRAGMENTO_RECIBIDO -> {
                 val progreso = session.receivedArks().size
                 _estado.value = BleEstado.Recibiendo(progreso)
+                _bleEstado.value = "Recibiendo confirmacion... ($progreso)"
             }
 
             StudentBleAttendanceSession.ScanResult.INVALIDO,

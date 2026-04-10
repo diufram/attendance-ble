@@ -66,7 +66,7 @@ fun AsistenciaDetalleView(
     esNuevaAsistencia: Boolean,
 
     onVolver: () -> Unit,
-    onAlternarEstado: (Long, String) -> Unit,
+    onAlternarEstado: (AsistenciaDetalleModel) -> Unit,
     onIniciarEscaneo: () -> Unit,
     onDetenerEscaneo: () -> Unit,
     onGuardar: () -> Unit,
@@ -342,7 +342,7 @@ fun AsistenciaDetalleView(
                                                         .height(30.dp)
                                                         .clickable {
                                                             if (!estadoEsPresente) {
-                                                                onAlternarEstado(detalle.carnetIdentidad.toLong(), detalle.estado)
+                                                                onAlternarEstado(detalle)
                                                             }
                                                         },
                                                     shape = RoundedCornerShape(6.dp),
@@ -363,7 +363,7 @@ fun AsistenciaDetalleView(
                                                         .height(30.dp)
                                                         .clickable {
                                                             if (estadoEsPresente) {
-                                                                onAlternarEstado(detalle.carnetIdentidad.toLong(), detalle.estado)
+                                                                onAlternarEstado(detalle)
                                                             }
                                                         },
                                                     shape = RoundedCornerShape(6.dp),
