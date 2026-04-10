@@ -11,10 +11,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.MenuBook
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Logout
 import androidx.compose.material.icons.filled.Person
@@ -41,13 +42,18 @@ fun MateriaDocenteView(
     model: MateriaModel,
     onCerrarSesion: () -> Unit,
     onMateriaSeleccionada: (MateriaModel) -> Unit,
-    onCrearMateria: (MateriaModel) -> Boolean
+    onCrearMateria: (MateriaModel) -> Boolean,
+    onEditarMateria: (MateriaModel) -> Boolean,
+    onEliminarMateria: (MateriaModel) -> Boolean,
 ) {
     var sigla by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
     var grupo by remember { mutableStateOf("") }
     var periodo by remember { mutableStateOf("") }
     var mostrarModalCrearMateria by remember { mutableStateOf(false) }
+    var mostrarModalEditarMateria by remember { mutableStateOf(false) }
+    var mostrarModalEliminarMateria by remember { mutableStateOf(false) }
+    var materiaSeleccionadaAccion by remember { mutableStateOf<MateriaModel?>(null) }
 
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
@@ -262,11 +268,32 @@ fun MateriaDocenteView(
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                                 )
                                             }
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
+                                            Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                                                IconButton(
+                                                    onClick = {
+                                                        materiaSeleccionadaAccion = materia
+                                                        mostrarModalEditarMateria = true
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.Edit,
+                                                        contentDescription = "Editar materia",
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                    )
+                                                }
+                                                IconButton(
+                                                    onClick = {
+                                                        materiaSeleccionadaAccion = materia
+                                                        mostrarModalEliminarMateria = true
+                                                    }
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.Delete,
+                                                        contentDescription = "Eliminar materia",
+                                                        tint = MaterialTheme.colorScheme.error,
+                                                    )
+                                                }
+                                            }
                                         }
 
                                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
@@ -412,6 +439,146 @@ fun MateriaDocenteView(
                             }
                         },
                         modifier = Modifier.weight(1f)
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
+    }
+
+    if (mostrarModalEditarMateria && materiaSeleccionadaAccion != null) {
+        var siglaEditar by remember { mutableStateOf(materiaSeleccionadaAccion?.sigla.orEmpty()) }
+        var nombreEditar by remember { mutableStateOf(materiaSeleccionadaAccion?.nombre.orEmpty()) }
+        var grupoEditar by remember { mutableStateOf(materiaSeleccionadaAccion?.grupo.orEmpty()) }
+        var periodoEditar by remember { mutableStateOf(materiaSeleccionadaAccion?.periodo.orEmpty()) }
+
+        ModalBottomSheet(
+            onDismissRequest = { mostrarModalEditarMateria = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = metrics.modalHorizontalPadding, vertical = metrics.modalVerticalPadding),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text("Editar materia", style = MaterialTheme.typography.titleLarge)
+                AppTextField(
+                    value = siglaEditar,
+                    onValueChange = { siglaEditar = it },
+                    label = "Sigla",
+                    leadingIcon = Icons.AutoMirrored.Filled.MenuBook,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                AppTextField(
+                    value = nombreEditar,
+                    onValueChange = { nombreEditar = it },
+                    label = "Nombre",
+                    leadingIcon = Icons.Filled.School,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                AppTextField(
+                    value = grupoEditar,
+                    onValueChange = { grupoEditar = it },
+                    label = "Grupo",
+                    leadingIcon = Icons.Filled.Groups,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                AppTextField(
+                    value = periodoEditar,
+                    onValueChange = { periodoEditar = it },
+                    label = "Periodo",
+                    leadingIcon = Icons.Filled.CalendarMonth,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    AppSecondaryButton(
+                        text = "Cancelar",
+                        onClick = { mostrarModalEditarMateria = false },
+                        modifier = Modifier.weight(1f),
+                    )
+                    AppPrimaryButton(
+                        text = "Guardar",
+                        onClick = {
+                            val base = materiaSeleccionadaAccion ?: return@AppPrimaryButton
+                            val actualizado = onEditarMateria(
+                                MateriaModel(
+                                    id = base.id,
+                                    sigla = siglaEditar.trim(),
+                                    nombre = nombreEditar.trim(),
+                                    grupo = grupoEditar.trim(),
+                                    periodo = periodoEditar.trim(),
+                                    docenteCarnet = base.docenteCarnet,
+                                    bitmapIndexEstudiante = base.bitmapIndexEstudiante,
+                                )
+                            )
+                            if (actualizado) {
+                                mostrarModalEditarMateria = false
+                                materiaSeleccionadaAccion = null
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+            }
+        }
+    }
+
+    if (mostrarModalEliminarMateria && materiaSeleccionadaAccion != null) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                mostrarModalEliminarMateria = false
+                materiaSeleccionadaAccion = null
+            },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = metrics.modalHorizontalPadding, vertical = metrics.modalVerticalPadding),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text("Eliminar materia", style = MaterialTheme.typography.titleLarge)
+                Text(
+                    text = "¿Realmente quieres eliminar ${materiaSeleccionadaAccion?.sigla} - ${materiaSeleccionadaAccion?.grupo}?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    AppSecondaryButton(
+                        text = "Cancelar",
+                        onClick = {
+                            mostrarModalEliminarMateria = false
+                            materiaSeleccionadaAccion = null
+                        },
+                        modifier = Modifier.weight(1f),
+                    )
+                    AppPrimaryButton(
+                        text = "Eliminar",
+                        onClick = {
+                            val materia = materiaSeleccionadaAccion ?: return@AppPrimaryButton
+                            val eliminado = onEliminarMateria(materia)
+                            if (eliminado) {
+                                mostrarModalEliminarMateria = false
+                                materiaSeleccionadaAccion = null
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
                     )
                 }
                 Spacer(modifier = Modifier.height(10.dp))

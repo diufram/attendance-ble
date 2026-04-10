@@ -1,7 +1,6 @@
 package com.example.attendance.navigation
 
 import androidx.navigation.NavHostController
-import com.example.attendance.model.MateriaModel
 
 object AppRoutes {
     const val LOGIN = "login"
@@ -54,12 +53,12 @@ class AppNavigation(
         navigateAndClearStack(AppRoutes.LOGIN)
     }
 
-    fun irAsistenciaView(materia: MateriaModel) {
-        navigateSafely("${AppRoutes.ASISTENCIA}/${materia.id}")
+    fun irAsistenciaView(materiaId: Long) {
+        navigateSafely("${AppRoutes.ASISTENCIA}/$materiaId")
     }
 
-    fun irInscritosView(materia: MateriaModel) {
-        navigateSafely("${AppRoutes.INSCRITOS}/${materia.id}")
+    fun irInscritosView(materiaId: Long) {
+        navigateSafely("${AppRoutes.INSCRITOS}/$materiaId")
     }
 
     fun irAsistenciaDetalleView(materiaId: Long, asistenciaId: Long) {

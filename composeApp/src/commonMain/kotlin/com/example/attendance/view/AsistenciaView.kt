@@ -14,6 +14,7 @@ import androidx.compose.material.icons.automirrored.filled.EventNote
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.TaskAlt
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -61,7 +62,8 @@ fun AsistenciaView(
     onVolver: () -> Unit,
     onIrInscritos: () -> Unit,
     onIrCrearAsistencia: () -> Unit,
-    onAbrirDetalle: (AsistenciaModel) -> Unit,
+    onAbrirDetalle: (Long) -> Unit,
+    onEliminar: (Long) -> Boolean,
     onGenerarQr: () -> String?,
 ) {
     val metrics = AttendanceThemeTokens.metrics
@@ -69,6 +71,8 @@ fun AsistenciaView(
     val asistencias by model.asistenciasMateria.collectAsState()
     var mostrarQr by remember { mutableStateOf(false) }
     var qrMatriz by remember { mutableStateOf<List<List<Boolean>>>(emptyList()) }
+    var mostrarEliminarModal by remember { mutableStateOf(false) }
+    var asistenciaAEliminar by remember { mutableStateOf<AsistenciaModel?>(null) }
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -242,7 +246,7 @@ fun AsistenciaView(
                         ) {
                             items(asistencias) { asistencia ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().clickable { onAbrirDetalle(asistencia) },
+                                    modifier = Modifier.fillMaxWidth().clickable { onAbrirDetalle(asistencia.id) },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
                                     border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))
@@ -275,6 +279,18 @@ fun AsistenciaView(
                                                     text = asistencia.fecha,
                                                     style = MaterialTheme.typography.bodyMedium.copy(fontSize = sizes.cardSubtitle),
                                                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
+                                            }
+                                            IconButton(
+                                                onClick = {
+                                                    asistenciaAEliminar = asistencia
+                                                    mostrarEliminarModal = true
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Delete,
+                                                    contentDescription = "Eliminar asistencia",
+                                                    tint = MaterialTheme.colorScheme.error
                                                 )
                                             }
                                         }
@@ -366,6 +382,64 @@ fun AsistenciaView(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
+            }
+        }
+    }
+
+    if (mostrarEliminarModal && asistenciaAEliminar != null) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                mostrarEliminarModal = false
+                asistenciaAEliminar = null
+            },
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            dragHandle = { BottomSheetDefaults.DragHandle() }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Eliminar asistencia",
+                    style = MaterialTheme.typography.titleMedium,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "¿Realmente quieres eliminar la asistencia #$materiaId-${asistenciaAEliminar?.id}?",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    AppSecondaryButton(
+                        text = "Cancelar",
+                        onClick = {
+                            mostrarEliminarModal = false
+                            asistenciaAEliminar = null
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    AppPrimaryButton(
+                        text = "Eliminar",
+                        onClick = {
+                            val asistencia = asistenciaAEliminar ?: return@AppPrimaryButton
+                            val eliminado = onEliminar(asistencia.id)
+                            if (eliminado) {
+                                mostrarEliminarModal = false
+                                asistenciaAEliminar = null
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
     }

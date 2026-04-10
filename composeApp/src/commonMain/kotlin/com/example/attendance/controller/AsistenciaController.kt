@@ -8,28 +8,38 @@ import com.example.attendance.navigation.AppNavigation
 import com.example.attendance.util.QrUtils
 
 class AsistenciaController(
+    private val asistenciaModel: AsistenciaModel,
     private val docenteModel: DocenteModel,
     private val inscritoModel: InscritoModel,
     private val materiaModel: MateriaModel,
     private val navigator: AppNavigation,
 ) {
-    fun volver() {
-        navigator.volver()
+    fun irInscritos(materiaId: Long) {
+        navigator.irInscritosView(materiaId)
     }
 
-    fun abrirInscritos(materia: MateriaModel) {
-        navigator.irInscritosView(materia)
+    fun irCrearAsistencia(materiaId: Long) {
+        navigator.irNuevaAsistenciaView(materiaId)
     }
 
-    fun abrirNuevaAsistencia(materia: MateriaModel) {
-        navigator.irNuevaAsistenciaView(materia.id)
+    fun abrirDetalle(materiaId: Long, asistenciaId: Long) {
+        navigator.irAsistenciaDetalleView(materiaId, asistenciaId)
     }
 
-    fun abrirDetalle(materia: MateriaModel, asistencia: AsistenciaModel) {
-        navigator.irAsistenciaDetalleView(materia.id, asistencia.id)
+    fun eliminar(materiaId: Long, asistenciaId: Long): Boolean {
+        val eliminado = asistenciaModel.eliminar(
+            AsistenciaModel(
+                id = asistenciaId,
+                materiaId = materiaId,
+            )
+        )
+        if (!eliminado) return false
+        asistenciaModel.cargarAsistenciasMateria(materiaId)
+        return true
     }
 
-    fun generarQr(materia: MateriaModel): String {
+    fun generarQr(materiaId: Long): String? {
+        val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId } ?: return null
         val docenteCarnet = materia.docenteCarnet ?: materiaModel.usuarioCarnet.value?.toLong()
         val docente = docenteCarnet?.toInt()?.let { docenteModel.obtenerPorCarnet(it.toLong()) }
         val inscritos = inscritoModel.obtenerPorMateria(materia.id)
@@ -38,5 +48,8 @@ class AsistenciaController(
                 it.carnetIdentidad to bitmap
             }
         return QrUtils.construirPayloadQrMateria(materia, docente, inscritos)
+    }
+    fun volver() {
+        navigator.volver()
     }
 }

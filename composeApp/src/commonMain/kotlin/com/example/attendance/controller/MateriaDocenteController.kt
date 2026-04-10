@@ -8,11 +8,11 @@ class MateriaDocenteController(
     private val navigator: AppNavigation,
 ) {
     fun materiaSeleccionada(materia: MateriaModel) {
-        navigator.irAsistenciaView(materia)
+        navigator.irAsistenciaView(materia.id)
     }
 
     fun crear(materia: MateriaModel): Boolean {
-        val carnet = materiaModel.usuarioCarnet.value?.toLong() ?: return false
+        val carnet = materiaModel.usuarioCarnet.value ?: return false
         materiaModel.crear(
             MateriaModel(
                 sigla = materia.sigla,
@@ -26,6 +26,23 @@ class MateriaDocenteController(
         materiaModel.cargarMaterias(carnet, esDocente = true)
         return true
     }
+
+    fun editar(materia: MateriaModel): Boolean {
+        val carnet = materiaModel.usuarioCarnet.value ?: return false
+        val actualizado = materiaModel.editar(materia)
+        if (!actualizado) return false
+        materiaModel.cargarMaterias(carnet, esDocente = true)
+        return true
+    }
+
+    fun eliminar(materia: MateriaModel): Boolean {
+        val carnet = materiaModel.usuarioCarnet.value ?: return false
+        val eliminado = materiaModel.eliminar(materia)
+        if (!eliminado) return false
+        materiaModel.cargarMaterias(carnet, esDocente = true)
+        return true
+    }
+
     fun cerrarSesion() {
         materiaModel.limpiarMaterias()
         navigator.irLoginView()

@@ -67,6 +67,7 @@ fun App(db: Database) {
 
     val asistenciaController = remember(appNavigation) {
         AsistenciaController(
+            asistenciaModel = asistenciaModel,
             docenteModel = docenteModel,
             inscritoModel = inscritoModel,
             materiaModel = materiaModel,
@@ -129,7 +130,9 @@ fun App(db: Database) {
                     model = materiaModel,
                     onCerrarSesion = docenteController::cerrarSesion,
                     onMateriaSeleccionada = docenteController::materiaSeleccionada,
-                    onCrearMateria = docenteController::crear
+                    onCrearMateria = docenteController::crear,
+                    onEditarMateria = docenteController::editar,
+                    onEliminarMateria = docenteController::eliminar,
                 )
             }
 
@@ -153,16 +156,11 @@ fun App(db: Database) {
                     materiaQrDetalle = materiaQrDetalle,
                     model = asistenciaModel,
                     onVolver = asistenciaController::volver,
-                    onIrInscritos = {
-                        if (materia != null) asistenciaController.abrirInscritos(materia)
-                    },
-                    onIrCrearAsistencia = {
-                        if (materia != null) asistenciaController.abrirNuevaAsistencia(materia)
-                    },
-                    onAbrirDetalle = { asistencia ->
-                        if (materia != null) asistenciaController.abrirDetalle(materia, asistencia)
-                    },
-                    onGenerarQr = { materia?.let { asistenciaController.generarQr(it) } },
+                    onIrInscritos = { asistenciaController.irInscritos(materiaId) },
+                    onIrCrearAsistencia = { asistenciaController.irCrearAsistencia(materiaId) },
+                    onAbrirDetalle = { asistenciaId -> asistenciaController.abrirDetalle(materiaId, asistenciaId) },
+                    onEliminar = { asistenciaId -> asistenciaController.eliminar(materiaId, asistenciaId) },
+                    onGenerarQr = { asistenciaController.generarQr(materiaId) },
                 )
             }
 

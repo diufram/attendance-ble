@@ -64,6 +64,38 @@ class MateriaModel(
             )
         }
     }
+
+    fun editar(materia: MateriaModel): Boolean {
+        if (materia.id <= 0L) return false
+        val database = requireDb()
+
+        val existente = database.materiaQueries.getMateriaByFormacion(
+            sigla = materia.sigla,
+            grupo = materia.grupo,
+            periodo = materia.periodo,
+        ).executeAsOneOrNull()
+
+        if (existente != null && existente.id != materia.id) {
+            return false
+        }
+
+        database.materiaQueries.updateMateria(
+            sigla = materia.sigla,
+            nombre = materia.nombre,
+            grupo = materia.grupo,
+            periodo = materia.periodo,
+            id = materia.id,
+        )
+        return true
+    }
+
+    fun eliminar(materia: MateriaModel): Boolean {
+        if (materia.id <= 0L) return false
+        val database = requireDb()
+        return runCatching {
+            database.materiaQueries.deleteMateria(materia.id)
+        }.isSuccess
+    }
     
     fun cargarMaterias(carnet: Long, esDocente: Boolean) {
         val database = requireDb()

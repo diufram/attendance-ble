@@ -44,4 +44,12 @@ class AsistenciaModel(
                 )
             }
     }
+
+    fun eliminar(asistencia: AsistenciaModel): Boolean {
+        val database = requireDb()
+        return runCatching {
+            database.detalleAsistenciaQueries.deleteDetalleByAsistencia(asistencia.id)
+            database.asistenciaQueries.deleteAsistencia(asistencia.id)
+        }.isSuccess
+    }
 }
