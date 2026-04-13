@@ -6,6 +6,8 @@ object AppRoutes {
     const val LOGIN = "login"
     const val DOCENTE_HOME = "docente_home"
     const val ESTUDIANTE_HOME = "estudiante_home"
+    const val DOCENTE_HOME_WITH_ID = "docente_home/{carnet}"
+    const val ESTUDIANTE_HOME_WITH_ID = "estudiante_home/{carnet}"
     const val ASISTENCIA = "asistencia"
     const val INSCRITOS = "inscritos"
     const val ASISTENCIA_DETALLE = "asistencia_detalle"
@@ -46,12 +48,12 @@ class AppNavigation(
         }
     }
 
-    fun irMateriaDocenteView() {
-        navigateAndClearStack(AppRoutes.DOCENTE_HOME)
+    fun irMateriaDocenteView(carnet: Long) {
+        navigateAndClearStack("${AppRoutes.DOCENTE_HOME}/$carnet")
     }
 
-    fun irMateriaEstudianteView() {
-        navigateAndClearStack(AppRoutes.ESTUDIANTE_HOME)
+    fun irMateriaEstudianteView(carnet: Long) {
+        navigateAndClearStack("${AppRoutes.ESTUDIANTE_HOME}/$carnet")
     }
 
     fun irLoginView() {

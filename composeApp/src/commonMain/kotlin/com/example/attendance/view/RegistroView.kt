@@ -25,10 +25,78 @@ import androidx.compose.ui.unit.dp
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppTextField
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+interface IRegistroView {
+    val nombre: StateFlow<String>
+    val apellido: StateFlow<String>
+    val carnet: StateFlow<String>
+    val esDocente: StateFlow<Boolean>
+    val error: StateFlow<String>
+    val submitting: StateFlow<Boolean>
+
+    fun onNombreChange(valor: String)
+    fun onApellidoChange(valor: String)
+    fun onCarnetChange(valor: String)
+    fun onEsDocenteChange(valor: Boolean)
+    fun setError(valor: String)
+    fun setSubmitting(valor: Boolean)
+}
+
+class RegistroViewData : IRegistroView {
+    private val _nombre = MutableStateFlow("")
+    override val nombre: StateFlow<String> = _nombre.asStateFlow()
+
+    private val _apellido = MutableStateFlow("")
+    override val apellido: StateFlow<String> = _apellido.asStateFlow()
+
+    private val _carnet = MutableStateFlow("")
+    override val carnet: StateFlow<String> = _carnet.asStateFlow()
+
+    private val _esDocente = MutableStateFlow(false)
+    override val esDocente: StateFlow<Boolean> = _esDocente.asStateFlow()
+
+    private val _error = MutableStateFlow("")
+    override val error: StateFlow<String> = _error.asStateFlow()
+
+    private val _submitting = MutableStateFlow(false)
+    override val submitting: StateFlow<Boolean> = _submitting.asStateFlow()
+
+    override fun onNombreChange(valor: String) {
+        _nombre.value = valor
+        _error.value = ""
+    }
+
+    override fun onApellidoChange(valor: String) {
+        _apellido.value = valor
+        _error.value = ""
+    }
+
+    override fun onCarnetChange(valor: String) {
+        _carnet.value = valor.filter(Char::isDigit)
+        _error.value = ""
+    }
+
+    override fun onEsDocenteChange(valor: Boolean) {
+        _esDocente.value = valor
+        _error.value = ""
+    }
+
+    override fun setError(valor: String) {
+        _error.value = valor
+    }
+
+    override fun setSubmitting(valor: Boolean) {
+        _submitting.value = valor
+    }
+}
 
 @Composable
 fun RegistroView(
-    onRegistrar: (carnet: String, nombre: String, apellido: String, esDocente: Boolean) -> String?,
+    view: IRegistroView,
+    onRegistrar: () -> Unit,
     onVolver: () -> Unit
 ) {
     val metrics = AttendanceThemeTokens.metrics
@@ -44,12 +112,12 @@ fun RegistroView(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    var nombre by remember { mutableStateOf("") }
-    var apellido by remember { mutableStateOf("") }
-    var carnet by remember { mutableStateOf("") }
-    var esDocente by remember { mutableStateOf(false) }
-    var error by remember { mutableStateOf("") }
-    var submitting by remember { mutableStateOf(false) }
+    val nombre by view.nombre.collectAsState()
+    val apellido by view.apellido.collectAsState()
+    val carnet by view.carnet.collectAsState()
+    val esDocente by view.esDocente.collectAsState()
+    val error by view.error.collectAsState()
+    val submitting by view.submitting.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -154,8 +222,7 @@ fun RegistroView(
                             modifier = Modifier.weight(1f),
                             onClick = {
                                 if (submitting) return@LoginRolePill
-                                esDocente = false
-                                error = ""
+                                view.onEsDocenteChange(false)
                             }
                         )
                         LoginRolePill(
@@ -164,18 +231,14 @@ fun RegistroView(
                             modifier = Modifier.weight(1f),
                             onClick = {
                                 if (submitting) return@LoginRolePill
-                                esDocente = true
-                                error = ""
+                                view.onEsDocenteChange(true)
                             }
                         )
                     }
 
                     AppTextField(
                         value = nombre,
-                        onValueChange = {
-                            nombre = it
-                            error = ""
-                        },
+                        onValueChange = view::onNombreChange,
                         label = "Nombre",
                         leadingIcon = Icons.Filled.Person,
                         modifier = Modifier.fillMaxWidth()
@@ -183,10 +246,7 @@ fun RegistroView(
 
                     AppTextField(
                         value = apellido,
-                        onValueChange = {
-                            apellido = it
-                            error = ""
-                        },
+                        onValueChange = view::onApellidoChange,
                         label = "Apellido",
                         leadingIcon = Icons.Filled.Person,
                         modifier = Modifier.fillMaxWidth()
@@ -194,10 +254,7 @@ fun RegistroView(
 
                     AppTextField(
                         value = carnet,
-                        onValueChange = {
-                            carnet = it.filter(Char::isDigit)
-                            error = ""
-                        },
+                        onValueChange = view::onCarnetChange,
                         label = "Carnet de Identidad",
                         leadingIcon = Icons.Filled.Badge,
                         keyboardType = KeyboardType.Number,
@@ -217,12 +274,7 @@ fun RegistroView(
                     AppPrimaryButton(
                         text = "Registrarse",
                         onClick = {
-                            submitting = true
-                            val result = onRegistrar(carnet, nombre, apellido, esDocente)
-                            if (result != null) {
-                                error = result
-                                submitting = false
-                            }
+                            onRegistrar()
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !submitting

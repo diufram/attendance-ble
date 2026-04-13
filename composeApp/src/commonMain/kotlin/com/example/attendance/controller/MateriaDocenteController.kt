@@ -8,8 +8,7 @@ class MateriaDocenteController(
     private val view: IMateriaDocenteView,
 ) {
 
-    fun iniciar() {
-        val carnet = materiaModel.usuarioCarnet.value ?: return
+    fun iniciar(carnet: Long) {
         materiaModel.cargarMaterias(carnet, esDocente = true)
         view.setMaterias(materiaModel.materiasUsuario.value)
     }

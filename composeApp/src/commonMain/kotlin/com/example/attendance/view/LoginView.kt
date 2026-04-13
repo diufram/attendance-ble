@@ -23,15 +23,53 @@ import androidx.compose.ui.unit.dp
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppTextField
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+interface ILoginView {
+    val carnet: StateFlow<String>
+    val error: StateFlow<String>
+    val submitting: StateFlow<Boolean>
+
+    fun onCarnetChange(valor: String)
+    fun setError(valor: String)
+    fun setSubmitting(valor: Boolean)
+}
+
+class LoginViewData : ILoginView {
+    private val _carnet = MutableStateFlow("")
+    override val carnet: StateFlow<String> = _carnet.asStateFlow()
+
+    private val _error = MutableStateFlow("")
+    override val error: StateFlow<String> = _error.asStateFlow()
+
+    private val _submitting = MutableStateFlow(false)
+    override val submitting: StateFlow<Boolean> = _submitting.asStateFlow()
+
+    override fun onCarnetChange(valor: String) {
+        _carnet.value = valor.filter(Char::isDigit)
+        _error.value = ""
+    }
+
+    override fun setError(valor: String) {
+        _error.value = valor
+    }
+
+    override fun setSubmitting(valor: Boolean) {
+        _submitting.value = valor
+    }
+}
 
 @Composable
 fun LoginView(
-    onLogin: (carnet: String) -> String?,
+    view: ILoginView,
+    onLogin: () -> Unit,
     onIrRegistro: () -> Unit
 ) {
-    var carnet by remember { mutableStateOf("") }
-    var error by remember { mutableStateOf("") }
-    var submitting by remember { mutableStateOf(false) }
+    val carnet by view.carnet.collectAsState()
+    val error by view.error.collectAsState()
+    val submitting by view.submitting.collectAsState()
 
     val metrics = AttendanceThemeTokens.metrics
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -141,10 +179,7 @@ fun LoginView(
 
                     AppTextField(
                         value = carnet,
-                        onValueChange = {
-                            carnet = it.filter(Char::isDigit)
-                            error = ""
-                        },
+                        onValueChange = view::onCarnetChange,
                         label = "Carnet de Identidad",
                         leadingIcon = Icons.Filled.Badge,
                         keyboardType = KeyboardType.Number,
@@ -164,12 +199,7 @@ fun LoginView(
                     AppPrimaryButton(
                         text = "Ingresar",
                         onClick = {
-                            submitting = true
-                            val result = onLogin(carnet)
-                            if (result != null) {
-                                error = result
-                                submitting = false
-                            }
+                            onLogin()
                         },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !submitting

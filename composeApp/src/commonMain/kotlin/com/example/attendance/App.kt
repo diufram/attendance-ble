@@ -106,6 +106,8 @@ fun App(db: Database) {
     }
 
     val materiaDocenteView = remember { MateriaDocenteViewData() }
+    val loginView = remember { LoginViewData() }
+    val registroView = remember { RegistroViewData() }
 
     val docenteController = remember {
         MateriaDocenteController(
@@ -135,8 +137,8 @@ fun App(db: Database) {
         AuthController(
             docenteModel = docenteModel,
             estudianteModel = estudianteModel,
-            materiaModel = materiaModel,
-            navigator = appNavigation
+            loginView = loginView,
+            registroView = registroView,
         )
     }
 
@@ -145,21 +147,45 @@ fun App(db: Database) {
 
             composable(AppRoutes.LOGIN) {
                 LoginView(
-                    onLogin = authController::login,
+                    view = loginView,
+                    onLogin = {
+                        val resultado = authController.onLogin() ?: return@LoginView
+                        val partes = resultado.split(":")
+                        val destino = partes.getOrNull(0)
+                        val carnet = partes.getOrNull(1)?.toLongOrNull() ?: return@LoginView
+                        when (destino) {
+                            "DOCENTE" -> appNavigation.irMateriaDocenteView(carnet)
+                            "ESTUDIANTE" -> appNavigation.irMateriaEstudianteView(carnet)
+                        }
+                    },
                     onIrRegistro = { appNavigation.navigateSafely("registro") }
                 )
             }
 
             composable("registro") {
                 RegistroView(
-                    onRegistrar = authController::registrar,
+                    view = registroView,
+                    onRegistrar = {
+                        val resultado = authController.onRegistrar() ?: return@RegistroView
+                        val partes = resultado.split(":")
+                        val destino = partes.getOrNull(0)
+                        val carnet = partes.getOrNull(1)?.toLongOrNull() ?: return@RegistroView
+                        when (destino) {
+                            "DOCENTE" -> appNavigation.irMateriaDocenteView(carnet)
+                            "ESTUDIANTE" -> appNavigation.irMateriaEstudianteView(carnet)
+                        }
+                    },
                     onVolver = { appNavigation.volver() }
                 )
             }
 
-            composable(AppRoutes.DOCENTE_HOME) {
-                LaunchedEffect(Unit) {
-                    docenteController.iniciar()
+            composable(
+                route = AppRoutes.DOCENTE_HOME_WITH_ID,
+                arguments = listOf(navArgument("carnet") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val carnet = extraerLongArg(backStackEntry, "carnet") ?: return@composable
+                LaunchedEffect(carnet) {
+                    docenteController.iniciar(carnet)
                 }
 
                 MateriaDocenteView(
@@ -312,10 +338,17 @@ fun App(db: Database) {
                 )
             }
 
-            composable(AppRoutes.ESTUDIANTE_HOME) {
+            composable(
+                route = AppRoutes.ESTUDIANTE_HOME_WITH_ID,
+                arguments = listOf(navArgument("carnet") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val carnet = extraerLongArg(backStackEntry, "carnet") ?: return@composable
                 val bleEstado by materiaEstudianteController.bleEstado.collectAsState()
                 val bleActivoMateriaId by materiaEstudianteController.bleActivoMateriaId.collectAsState()
                 val bleConfirmacion by materiaEstudianteController.bleConfirmacion.collectAsState()
+                LaunchedEffect(carnet) {
+                    materiaModel.cargarMaterias(carnet, esDocente = false)
+                }
                 DisposableEffect(materiaEstudianteController) {
                     onDispose {
                         materiaEstudianteController.detenerMarcadoAsistencia()
