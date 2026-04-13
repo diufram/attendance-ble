@@ -27,9 +27,39 @@ import com.example.attendance.view.*
 import com.example.attendance.view.theme.AttendanceTheme
 
 private fun extraerLongArg(backStackEntry: NavBackStackEntry, key: String): Long? {
-    val argsText = backStackEntry.arguments?.toString() ?: return null
-    val match = Regex("\\b$key=([^,\\]}]+)").find(argsText) ?: return null
-    return match.groupValues.getOrNull(1)?.trim()?.toLongOrNull()
+    val candidates = listOfNotNull(
+        backStackEntry.arguments?.toString(),
+        backStackEntry.destination.route,
+        backStackEntry.toString(),
+    )
+
+    // 1) Buscar patrón "key=value"
+    candidates.forEach { text ->
+        val kvMatch = Regex("\\b$key=([-]?\\d+)").find(text)
+        val value = kvMatch?.groupValues?.getOrNull(1)?.toLongOrNull()
+        if (value != null) return value
+    }
+
+    // 2) Fallback por rutas conocidas
+    candidates.forEach { text ->
+        when (key) {
+            "materiaId" -> {
+                val materiaSimple = Regex("(?:asistencia|inscritos)/([-]?\\d+)").find(text)
+                val materiaDetalle = Regex("asistencia_detalle/([-]?\\d+)/([-]?\\d+)").find(text)
+                val value = materiaSimple?.groupValues?.getOrNull(1)?.toLongOrNull()
+                    ?: materiaDetalle?.groupValues?.getOrNull(1)?.toLongOrNull()
+                if (value != null) return value
+            }
+
+            "asistenciaId" -> {
+                val match = Regex("asistencia_detalle/([-]?\\d+)/([-]?\\d+)").find(text)
+                val value = match?.groupValues?.getOrNull(2)?.toLongOrNull()
+                if (value != null) return value
+            }
+        }
+    }
+
+    return null
 }
 
 @Composable
@@ -126,13 +156,12 @@ fun App(db: Database) {
             }
 
             composable(AppRoutes.DOCENTE_HOME) {
+                LaunchedEffect(Unit) {
+                    docenteController.iniciar()
+                }
+
                 MateriaDocenteView(
-                    model = materiaModel,
-                    onCerrarSesion = docenteController::cerrarSesion,
-                    onMateriaSeleccionada = docenteController::materiaSeleccionada,
-                    onCrearMateria = docenteController::crear,
-                    onEditarMateria = docenteController::editar,
-                    onEliminarMateria = docenteController::eliminar,
+                    view = docenteController,
                 )
             }
 
@@ -140,7 +169,9 @@ fun App(db: Database) {
                 route = AppRoutes.ASISTENCIA_WITH_ID,
                 arguments = listOf(navArgument("materiaId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val materiaId = extraerLongArg(backStackEntry, "materiaId") ?: return@composable
+                val materiaId = extraerLongArg(backStackEntry, "materiaId")
+                    ?: appNavigation.ultimoMateriaId
+                    ?: return@composable
 
                 val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId }
                 val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Asistencia"
@@ -168,7 +199,9 @@ fun App(db: Database) {
                 route = AppRoutes.INSCRITOS_WITH_ID,
                 arguments = listOf(navArgument("materiaId") { type = NavType.StringType })
             ) { backStackEntry ->
-                val materiaId = extraerLongArg(backStackEntry, "materiaId") ?: return@composable
+                val materiaId = extraerLongArg(backStackEntry, "materiaId")
+                    ?: appNavigation.ultimoMateriaId
+                    ?: return@composable
 
                 val materia = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId }
                 val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Inscritos"
@@ -207,8 +240,12 @@ fun App(db: Database) {
                     navArgument("asistenciaId") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val materiaId = extraerLongArg(backStackEntry, "materiaId") ?: return@composable
-                val asistenciaId = extraerLongArg(backStackEntry, "asistenciaId") ?: return@composable
+                val materiaId = extraerLongArg(backStackEntry, "materiaId")
+                    ?: appNavigation.ultimoMateriaId
+                    ?: return@composable
+                val asistenciaId = extraerLongArg(backStackEntry, "asistenciaId")
+                    ?: appNavigation.ultimoAsistenciaId
+                    ?: return@composable
                 val esNueva = asistenciaId == -1L
 
                 val materiaActiva = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId }
@@ -244,7 +281,6 @@ fun App(db: Database) {
                     materiaGrupo = materiaActiva?.grupo.orEmpty(),
                     bleActivo = bleActivo,
                     bleEstado = bleEstado,
-                    esNuevaAsistencia = esNueva,
                     onVolver = asistenciaDetalleController::volver,
                     onAlternarEstado = asistenciaDetalleController::alternarEstado,
                     onIniciarEscaneo = {
@@ -254,19 +290,13 @@ fun App(db: Database) {
                     },
                     onDetenerEscaneo = asistenciaDetalleController::detenerEscaneo,
                     onGuardar = {
-                        if (materiaActiva != null) {
-                            val asistencia = AsistenciaModel(
-                                id = asistenciaId,
-                                materiaId = materiaActiva.id,
-                            )
-                            val guardado = asistenciaDetalleController.guardar(
-                                materiaActiva,
-                                asistencia,
-                                esNueva,
-                            )
-                            if (guardado) {
-                                asistenciaDetalleController.volver()
-                            }
+                        val asistencia = AsistenciaModel(
+                            id = asistenciaId,
+                            materiaId = materiaId,
+                        )
+                        val guardado = asistenciaDetalleController.guardar(asistencia)
+                        if (guardado) {
+                            asistenciaDetalleController.volver()
                         }
                     },
                 )

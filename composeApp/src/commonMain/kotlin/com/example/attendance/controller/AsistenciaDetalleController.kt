@@ -16,16 +16,17 @@ class AsistenciaDetalleController(
     val bleActivo: StateFlow<Boolean> = bleService.bleActivo
     val bleEstado: StateFlow<String> = bleService.bleEstado
 
-    fun guardar(materia: MateriaModel, asistencia: AsistenciaModel, esNueva: Boolean): Boolean {
+    fun guardar(asistencia: AsistenciaModel): Boolean {
         return try {
             val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
+            val esNueva = asistencia.id <= 0L
 
             if (esNueva) {
                 val nuevaAsistenciaId = asistenciaModel.guardar(
-                    AsistenciaModel(materiaId = materia.id)
+                    AsistenciaModel(materiaId = asistencia.materiaId)
                 )
                 detallesActuales.forEach { detalle ->
-                    asistenciaDetalleModel.insertar(
+                    asistenciaDetalleModel.crear(
                         AsistenciaDetalleModel(
                             asistenciaId = nuevaAsistenciaId,
                             carnetIdentidad = detalle.carnetIdentidad,
@@ -45,7 +46,7 @@ class AsistenciaDetalleController(
                 asistenciaDetalleModel.cargarDetallesAsistencia(asistencia.id)
             }
 
-            asistenciaModel.cargarAsistenciasMateria(materia.id)
+            asistenciaModel.cargarAsistenciasMateria(asistencia.materiaId)
             true
         } catch (_: Exception) {
             false

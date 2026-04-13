@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -33,6 +34,17 @@ fun LoginView(
     var submitting by remember { mutableStateOf(false) }
 
     val metrics = AttendanceThemeTokens.metrics
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val cardContainer = if (isDark) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+    }
+    val secondaryTextColor = if (isDark) {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.84f)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -83,7 +95,7 @@ fun LoginView(
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                    containerColor = cardContainer
                 ),
                 border = BorderStroke(
                     metrics.thinBorder,
@@ -116,13 +128,14 @@ fun LoginView(
                     Text(
                         text = "Attendance Control",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
                         text = "Ingresa tu carnet para iniciar sesión",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = secondaryTextColor,
                         textAlign = TextAlign.Center
                     )
 
@@ -142,7 +155,9 @@ fun LoginView(
                         Text(
                             text = error,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
 
@@ -160,8 +175,13 @@ fun LoginView(
                         enabled = !submitting
                     )
 
-                    TextButton(onClick = onIrRegistro) {
-                        Text("Regístrate")
+                    TextButton(
+                        onClick = onIrRegistro,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("Regístrate", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }

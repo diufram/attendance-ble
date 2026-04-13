@@ -28,7 +28,7 @@ data class AsistenciaDetalleModel(
         _detallesAsistencia.value = estudiantes
     }
 
-    fun insertar(detalle: AsistenciaDetalleModel) {
+    fun crear(detalle: AsistenciaDetalleModel) {
         val database = requireDb()
 
         try {

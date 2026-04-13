@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +32,18 @@ fun RegistroView(
     onVolver: () -> Unit
 ) {
     val metrics = AttendanceThemeTokens.metrics
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+    val cardContainer = if (isDark) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+    } else {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+    }
+    val secondaryTextColor = if (isDark) {
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.84f)
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+
     var nombre by remember { mutableStateOf("") }
     var apellido by remember { mutableStateOf("") }
     var carnet by remember { mutableStateOf("") }
@@ -87,7 +100,7 @@ fun RegistroView(
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(28.dp),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                    containerColor = cardContainer
                 ),
                 border = BorderStroke(
                     metrics.thinBorder,
@@ -120,13 +133,14 @@ fun RegistroView(
                     Text(
                         text = "Registrarse",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.SemiBold
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
                     )
 
                     Text(
                         text = "Ingresa tus datos para registrarte",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = secondaryTextColor,
                         textAlign = TextAlign.Center
                     )
 
@@ -194,7 +208,9 @@ fun RegistroView(
                         Text(
                             text = error,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
                         )
                     }
 
@@ -212,8 +228,13 @@ fun RegistroView(
                         enabled = !submitting
                     )
 
-                    TextButton(onClick = onVolver) {
-                        Text("¿Ya tienes sesión? Iniciar sesión")
+                    TextButton(
+                        onClick = onVolver,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text("¿Ya tienes sesión? Iniciar sesión", fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
@@ -229,6 +250,7 @@ private fun LoginRolePill(
     onClick: () -> Unit
 ) {
     val metrics = AttendanceThemeTokens.metrics
+    val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
 
     Surface(
         modifier = modifier.clickable(onClick = onClick),
@@ -255,7 +277,8 @@ private fun LoginRolePill(
             color = if (selected) {
                 MaterialTheme.colorScheme.onPrimary
             } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
+                if (isDark) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f)
+                else MaterialTheme.colorScheme.onSurfaceVariant
             },
             textAlign = TextAlign.Center,
             style = MaterialTheme.typography.labelLarge

@@ -63,8 +63,6 @@ fun AsistenciaDetalleView(
     materiaGrupo: String,
     bleActivo: Boolean,
     bleEstado: String,
-    esNuevaAsistencia: Boolean,
-
     onVolver: () -> Unit,
     onAlternarEstado: (AsistenciaDetalleModel) -> Unit,
     onIniciarEscaneo: () -> Unit,

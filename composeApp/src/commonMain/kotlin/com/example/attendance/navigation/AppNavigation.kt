@@ -20,6 +20,11 @@ class AppNavigation(
     private val isNavigationLocked: () -> Boolean,
     private val lockNavigation: () -> Unit
 ) {
+    var ultimoMateriaId: Long? = null
+        private set
+    var ultimoAsistenciaId: Long? = null
+        private set
+
     fun navigateSafely(route: String) {
         if (isNavigationLocked()) return
         lockNavigation()
@@ -54,18 +59,24 @@ class AppNavigation(
     }
 
     fun irAsistenciaView(materiaId: Long) {
+        ultimoMateriaId = materiaId
         navigateSafely("${AppRoutes.ASISTENCIA}/$materiaId")
     }
 
     fun irInscritosView(materiaId: Long) {
+        ultimoMateriaId = materiaId
         navigateSafely("${AppRoutes.INSCRITOS}/$materiaId")
     }
 
     fun irAsistenciaDetalleView(materiaId: Long, asistenciaId: Long) {
+        ultimoMateriaId = materiaId
+        ultimoAsistenciaId = asistenciaId
         navigateSafely("${AppRoutes.ASISTENCIA_DETALLE}/$materiaId/$asistenciaId")
     }
 
     fun irNuevaAsistenciaView(materiaId: Long) {
+        ultimoMateriaId = materiaId
+        ultimoAsistenciaId = -1L
         navigateSafely("${AppRoutes.ASISTENCIA_DETALLE}/$materiaId/-1")
     }
 
