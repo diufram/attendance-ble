@@ -30,28 +30,166 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AppTextField
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
+interface IMateriaDocenteView {
+    val materias: StateFlow<List<MateriaModel>>
+    val sigla: StateFlow<String>
+    val nombre: StateFlow<String>
+    val grupo: StateFlow<String>
+    val periodo: StateFlow<String>
+    val mostrarModalMateria: StateFlow<Boolean>
+    val mostrarModalEliminarMateria: StateFlow<Boolean>
+    val materiaSeleccionadaAccion: StateFlow<MateriaModel?>
+    val errorMensaje: StateFlow<String?>
+
+    fun setMaterias(materias: List<MateriaModel>)
+    fun onSiglaChange(valor: String)
+    fun onNombreChange(valor: String)
+    fun onGrupoChange(valor: String)
+    fun onPeriodoChange(valor: String)
+    fun onAbrirModalCrear()
+    fun onCerrarModalCrear()
+    fun onAbrirModalEditar(materia: MateriaModel)
+    fun onCerrarModalEditar()
+    fun onAbrirModalEliminar(materia: MateriaModel)
+    fun onCerrarModalEliminar()
+    fun setErrorMensaje(mensaje: String?)
+    fun onCerrarError()
+    fun limpiarFormulario()
+}
+
+class MateriaDocenteViewData : IMateriaDocenteView {
+    private val _materias = MutableStateFlow<List<MateriaModel>>(emptyList())
+    override val materias: StateFlow<List<MateriaModel>> = _materias.asStateFlow()
+
+    private val _sigla = MutableStateFlow("")
+    override val sigla: StateFlow<String> = _sigla.asStateFlow()
+
+    private val _nombre = MutableStateFlow("")
+    override val nombre: StateFlow<String> = _nombre.asStateFlow()
+
+    private val _grupo = MutableStateFlow("")
+    override val grupo: StateFlow<String> = _grupo.asStateFlow()
+
+    private val _periodo = MutableStateFlow("")
+    override val periodo: StateFlow<String> = _periodo.asStateFlow()
+
+    private val _mostrarModalMateria = MutableStateFlow(false)
+    override val mostrarModalMateria: StateFlow<Boolean> = _mostrarModalMateria.asStateFlow()
+
+    private val _mostrarModalEliminarMateria = MutableStateFlow(false)
+    override val mostrarModalEliminarMateria: StateFlow<Boolean> = _mostrarModalEliminarMateria.asStateFlow()
+
+    private val _materiaSeleccionadaAccion = MutableStateFlow<MateriaModel?>(null)
+    override val materiaSeleccionadaAccion: StateFlow<MateriaModel?> = _materiaSeleccionadaAccion.asStateFlow()
+
+    private val _errorMensaje = MutableStateFlow<String?>(null)
+    override val errorMensaje: StateFlow<String?> = _errorMensaje.asStateFlow()
+
+    override fun setMaterias(materias: List<MateriaModel>) {
+        _materias.value = materias
+    }
+
+    override fun onSiglaChange(valor: String) {
+        _sigla.value = valor
+    }
+
+    override fun onNombreChange(valor: String) {
+        _nombre.value = valor
+    }
+
+    override fun onGrupoChange(valor: String) {
+        _grupo.value = valor
+    }
+
+    override fun onPeriodoChange(valor: String) {
+        _periodo.value = valor
+    }
+
+    override fun onAbrirModalCrear() {
+        _errorMensaje.value = null
+        limpiarFormulario()
+        _materiaSeleccionadaAccion.value = null
+        _mostrarModalMateria.value = true
+    }
+
+    override fun onCerrarModalCrear() {
+        _mostrarModalMateria.value = false
+        limpiarFormulario()
+    }
+
+    override fun onAbrirModalEditar(materia: MateriaModel) {
+        _errorMensaje.value = null
+        _materiaSeleccionadaAccion.value = materia
+        _sigla.value = materia.sigla
+        _nombre.value = materia.nombre
+        _grupo.value = materia.grupo
+        _periodo.value = materia.periodo
+        _mostrarModalMateria.value = true
+    }
+
+    override fun onCerrarModalEditar() {
+        _mostrarModalMateria.value = false
+        _materiaSeleccionadaAccion.value = null
+        limpiarFormulario()
+    }
+
+    override fun onAbrirModalEliminar(materia: MateriaModel) {
+        _errorMensaje.value = null
+        _materiaSeleccionadaAccion.value = materia
+        _mostrarModalEliminarMateria.value = true
+    }
+
+    override fun onCerrarModalEliminar() {
+        _mostrarModalEliminarMateria.value = false
+        _materiaSeleccionadaAccion.value = null
+    }
+
+    override fun setErrorMensaje(mensaje: String?) {
+        _errorMensaje.value = mensaje
+    }
+
+    override fun onCerrarError() {
+        _errorMensaje.value = null
+    }
+
+    override fun limpiarFormulario() {
+        _sigla.value = ""
+        _nombre.value = ""
+        _grupo.value = ""
+        _periodo.value = ""
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaDocenteView(
     view: IMateriaDocenteView,
+    onCerrarSesion: () -> Unit,
+    irAsistenciaView: (Long) -> Unit,
+    onCrear: () -> Unit,
+    onGuardar: () -> Unit,
+    onEliminar: () -> Unit,
 ) {
-    val metrics = AttendanceThemeTokens.metrics
-    val sizes = AttendanceThemeTokens.textSizes
-    val materias by view.materias.collectAsState()
-    val siglaFormulario by view.siglaFormulario.collectAsState()
-    val nombreFormulario by view.nombreFormulario.collectAsState()
-    val grupoFormulario by view.grupoFormulario.collectAsState()
-    val periodoFormulario by view.periodoFormulario.collectAsState()
-    val mostrarModalCrearMateria by view.mostrarModalCrearMateria.collectAsState()
-    val mostrarModalEditarMateria by view.mostrarModalEditarMateria.collectAsState()
+    val sigla by view.sigla.collectAsState()
+    val nombre by view.nombre.collectAsState()
+    val grupo by view.grupo.collectAsState()
+    val periodo by view.periodo.collectAsState()
+    val mostrarModalMateria by view.mostrarModalMateria.collectAsState()
     val mostrarModalEliminarMateria by view.mostrarModalEliminarMateria.collectAsState()
     val materiaSeleccionadaAccion by view.materiaSeleccionadaAccion.collectAsState()
     val errorMensaje by view.errorMensaje.collectAsState()
+    val metrics = AttendanceThemeTokens.metrics
+    val sizes = AttendanceThemeTokens.textSizes
+    val materias by view.materias.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -100,7 +238,7 @@ fun MateriaDocenteView(
                         }
                     },
                     actions = {
-                        TextButton(onClick = view::onCerrarSesion) {
+                        TextButton(onClick = onCerrarSesion) {
                             Icon(Icons.Filled.Logout, contentDescription = null)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text("Salir")
@@ -225,7 +363,7 @@ fun MateriaDocenteView(
                         ) {
                             items(materias) { materia ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().clickable { view.onMateriaSeleccionada(materia) },
+                                    modifier = Modifier.fillMaxWidth().clickable { irAsistenciaView(materia.id) },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
@@ -352,9 +490,13 @@ fun MateriaDocenteView(
         }
     }
 
-    if (mostrarModalCrearMateria) {
+    val esModalCrear = mostrarModalMateria && materiaSeleccionadaAccion == null
+    val esModalEditar = mostrarModalMateria && materiaSeleccionadaAccion != null
+    if (esModalCrear || esModalEditar) {
         ModalBottomSheet(
-            onDismissRequest = view::onCerrarModalCrear,
+            onDismissRequest = {
+                if (esModalEditar) view.onCerrarModalEditar() else view.onCerrarModalCrear()
+            },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onBackground
@@ -368,37 +510,39 @@ fun MateriaDocenteView(
                     .padding(horizontal = metrics.modalHorizontalPadding, vertical = metrics.modalVerticalPadding),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                Text("Nueva Materia", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    text = "Completa los datos para habilitar registro de asistencia.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(if (esModalEditar) "Editar materia" else "Nueva Materia", style = MaterialTheme.typography.titleLarge)
+                if (esModalCrear) {
+                    Text(
+                        text = "Completa los datos para habilitar registro de asistencia.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 AppTextField(
-                    value = siglaFormulario,
-                    onValueChange = view::onSiglaFormularioChange,
-                    label = "Sigla (ej: INF-301)",
+                    value = sigla,
+                    onValueChange = view::onSiglaChange,
+                    label = if (esModalEditar) "Sigla" else "Sigla (ej: INF-301)",
                     leadingIcon = Icons.AutoMirrored.Filled.MenuBook,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
-                    value = nombreFormulario,
-                    onValueChange = view::onNombreFormularioChange,
+                    value = nombre,
+                    onValueChange = view::onNombreChange,
                     label = "Nombre",
                     leadingIcon = Icons.Filled.School,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
-                    value = grupoFormulario,
-                    onValueChange = view::onGrupoFormularioChange,
-                    label = "Grupo (ej: A)",
+                    value = grupo,
+                    onValueChange = view::onGrupoChange,
+                    label = if (esModalEditar) "Grupo" else "Grupo (ej: A)",
                     leadingIcon = Icons.Filled.Groups,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
-                    value = periodoFormulario,
-                    onValueChange = view::onPeriodoFormularioChange,
-                    label = "Periodo (ej: 1-2026)",
+                    value = periodo,
+                    onValueChange = view::onPeriodoChange,
+                    label = if (esModalEditar) "Periodo" else "Periodo (ej: 1-2026)",
                     leadingIcon = Icons.Filled.CalendarMonth,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -408,82 +552,17 @@ fun MateriaDocenteView(
                 ) {
                     AppSecondaryButton(
                         text = "Cancelar",
-                        onClick = view::onCerrarModalCrear,
-                        modifier = Modifier.weight(1f)
-                    )
-                    AppPrimaryButton(
-                        text = "Crear",
                         onClick = {
-                            view.onCrearMateria()
+                            if (esModalEditar) view.onCerrarModalEditar() else view.onCerrarModalCrear()
                         },
                         modifier = Modifier.weight(1f)
                     )
-                }
-                Spacer(modifier = Modifier.height(10.dp))
-            }
-        }
-    }
-
-    if (mostrarModalEditarMateria && materiaSeleccionadaAccion != null) {
-        ModalBottomSheet(
-            onDismissRequest = view::onCerrarModalEditar,
-            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onBackground,
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .imePadding()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = metrics.modalHorizontalPadding, vertical = metrics.modalVerticalPadding),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text("Editar materia", style = MaterialTheme.typography.titleLarge)
-                AppTextField(
-                    value = siglaFormulario,
-                    onValueChange = view::onSiglaFormularioChange,
-                    label = "Sigla",
-                    leadingIcon = Icons.AutoMirrored.Filled.MenuBook,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                AppTextField(
-                    value = nombreFormulario,
-                    onValueChange = view::onNombreFormularioChange,
-                    label = "Nombre",
-                    leadingIcon = Icons.Filled.School,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                AppTextField(
-                    value = grupoFormulario,
-                    onValueChange = view::onGrupoFormularioChange,
-                    label = "Grupo",
-                    leadingIcon = Icons.Filled.Groups,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                AppTextField(
-                    value = periodoFormulario,
-                    onValueChange = view::onPeriodoFormularioChange,
-                    label = "Periodo",
-                    leadingIcon = Icons.Filled.CalendarMonth,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    AppSecondaryButton(
-                        text = "Cancelar",
-                        onClick = view::onCerrarModalEditar,
-                        modifier = Modifier.weight(1f),
-                    )
                     AppPrimaryButton(
-                        text = "Guardar",
+                        text = if (esModalEditar) "Guardar" else "Crear",
                         onClick = {
-                            view.onGuardarEdicion()
+                            if (esModalEditar) onGuardar() else onCrear()
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f)
                     )
                 }
                 Spacer(modifier = Modifier.height(10.dp))
@@ -527,7 +606,7 @@ fun MateriaDocenteView(
                     AppPrimaryButton(
                         text = "Eliminar",
                         onClick = {
-                            view.onConfirmarEliminar()
+                            onEliminar()
                         },
                         modifier = Modifier.weight(1f),
                     )

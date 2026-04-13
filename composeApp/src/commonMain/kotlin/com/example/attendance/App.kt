@@ -105,10 +105,12 @@ fun App(db: Database) {
         )
     }
 
-    val docenteController = remember(appNavigation) {
+    val materiaDocenteView = remember { MateriaDocenteViewData() }
+
+    val docenteController = remember {
         MateriaDocenteController(
             materiaModel = materiaModel,
-            navigator = appNavigation
+            view = materiaDocenteView,
         )
     }
 
@@ -161,7 +163,15 @@ fun App(db: Database) {
                 }
 
                 MateriaDocenteView(
-                    view = docenteController,
+                    view = materiaDocenteView,
+                    onCerrarSesion = {
+                        docenteController.onCerrarSesion()
+                        appNavigation.irLoginView()
+                    },
+                    irAsistenciaView = appNavigation::irAsistenciaView,
+                    onCrear = docenteController::onCrear,
+                    onGuardar = docenteController::onGuardar,
+                    onEliminar = docenteController::onEliminar,
                 )
             }
 
