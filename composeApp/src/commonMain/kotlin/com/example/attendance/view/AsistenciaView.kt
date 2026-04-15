@@ -1,78 +1,123 @@
 package com.example.attendance.view
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.EventNote
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material.icons.filled.TaskAlt
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.foundation.Canvas
-import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.ui.Modifier
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.material3.Icon
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.view.theme.AppPrimaryButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import qrcode.QRCode
+
+interface IAsistenciaView {
+    val asistencias: StateFlow<List<AsistenciaModel>>
+    val mostrarQr: StateFlow<Boolean>
+    val qrMatriz: StateFlow<List<List<Boolean>>>
+    val mostrarEliminarModal: StateFlow<Boolean>
+    val asistenciaAEliminar: StateFlow<AsistenciaModel?>
+
+    fun setAsistencias(asistencias: List<AsistenciaModel>)
+    fun onMostrarQr(valor: Boolean)
+    fun onQrMatriz(matriz: List<List<Boolean>>)
+    fun onMostrarEliminarModal(valor: Boolean)
+    fun onAsistenciaAEliminar(asistencia: AsistenciaModel?)
+}
+
+class AsistenciaViewData : IAsistenciaView {
+    private val _asistencias = MutableStateFlow<List<AsistenciaModel>>(emptyList())
+    override val asistencias: StateFlow<List<AsistenciaModel>> = _asistencias.asStateFlow()
+
+    private val _mostrarQr = MutableStateFlow(false)
+    override val mostrarQr: StateFlow<Boolean> = _mostrarQr.asStateFlow()
+
+    private val _qrMatriz = MutableStateFlow<List<List<Boolean>>>(emptyList())
+    override val qrMatriz: StateFlow<List<List<Boolean>>> = _qrMatriz.asStateFlow()
+
+    private val _mostrarEliminarModal = MutableStateFlow(false)
+    override val mostrarEliminarModal: StateFlow<Boolean> = _mostrarEliminarModal.asStateFlow()
+
+    private val _asistenciaAEliminar = MutableStateFlow<AsistenciaModel?>(null)
+    override val asistenciaAEliminar: StateFlow<AsistenciaModel?> = _asistenciaAEliminar.asStateFlow()
+
+    override fun setAsistencias(asistencias: List<AsistenciaModel>) {
+        _asistencias.value = asistencias
+    }
+
+    override fun onMostrarQr(valor: Boolean) {
+        _mostrarQr.value = valor
+    }
+
+    override fun onQrMatriz(matriz: List<List<Boolean>>) {
+        _qrMatriz.value = matriz
+    }
+
+    override fun onMostrarEliminarModal(valor: Boolean) {
+        _mostrarEliminarModal.value = valor
+    }
+
+    override fun onAsistenciaAEliminar(asistencia: AsistenciaModel?) {
+        _asistenciaAEliminar.value = asistencia
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciaView(
+    view: IAsistenciaView,
     materiaId: Long,
     materiaNombre: String,
     materiaQrDetalle: String,
-    model: AsistenciaModel,
     onVolver: () -> Unit,
     onIrInscritos: () -> Unit,
     onIrCrearAsistencia: () -> Unit,
     onAbrirDetalle: (Long) -> Unit,
-    onEliminar: (Long) -> Boolean,
     onGenerarQr: () -> String?,
+    onEliminar: () -> Boolean,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val asistencias by model.asistenciasMateria.collectAsState()
-    var mostrarQr by remember { mutableStateOf(false) }
-    var qrMatriz by remember { mutableStateOf<List<List<Boolean>>>(emptyList()) }
-    var mostrarEliminarModal by remember { mutableStateOf(false) }
-    var asistenciaAEliminar by remember { mutableStateOf<AsistenciaModel?>(null) }
+    val asistencias by view.asistencias.collectAsState()
+    val mostrarQr by view.mostrarQr.collectAsState()
+    val qrMatriz by view.qrMatriz.collectAsState()
+    val mostrarEliminarModal by view.mostrarEliminarModal.collectAsState()
+    val asistenciaAEliminar by view.asistenciaAEliminar.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
             modifier = Modifier
@@ -107,6 +152,7 @@ fun AsistenciaView(
         )
 
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = {
@@ -130,8 +176,8 @@ fun AsistenciaView(
                     actions = {
                         IconButton(onClick = {
                             val payload = onGenerarQr() ?: return@IconButton
-                            qrMatriz = generarQrMatriz(payload)
-                            mostrarQr = true
+                            view.onQrMatriz(generarQrMatriz(payload))
+                            view.onMostrarQr(true)
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.QrCode2,
@@ -165,11 +211,7 @@ fun AsistenciaView(
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
                         AppSecondaryButton(text = "Inscritos", onClick = onIrInscritos, modifier = Modifier.weight(1f))
-                        AppPrimaryButton(
-                            text = "Crear asistencia",
-                            onClick = onIrCrearAsistencia,
-                            modifier = Modifier.weight(1f)
-                        )
+                        AppPrimaryButton(text = "Crear asistencia", onClick = onIrCrearAsistencia, modifier = Modifier.weight(1f))
                     }
 
                     Card(
@@ -226,7 +268,7 @@ fun AsistenciaView(
                                 verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 Icon(
-                                    imageVector = Icons.Filled.Groups,
+                                    imageVector = Icons.Filled.TaskAlt,
                                     contentDescription = null,
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -246,7 +288,9 @@ fun AsistenciaView(
                         ) {
                             items(asistencias) { asistencia ->
                                 Card(
-                                    modifier = Modifier.fillMaxWidth().clickable { onAbrirDetalle(asistencia.id) },
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onAbrirDetalle(asistencia.id) },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
                                     border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))
@@ -283,8 +327,8 @@ fun AsistenciaView(
                                             }
                                             IconButton(
                                                 onClick = {
-                                                    asistenciaAEliminar = asistencia
-                                                    mostrarEliminarModal = true
+                                                    view.onAsistenciaAEliminar(asistencia)
+                                                    view.onMostrarEliminarModal(true)
                                                 }
                                             ) {
                                                 Icon(
@@ -325,7 +369,7 @@ fun AsistenciaView(
 
     if (mostrarQr) {
         ModalBottomSheet(
-            onDismissRequest = { mostrarQr = false },
+            onDismissRequest = { view.onMostrarQr(false) },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurface,
             dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -389,8 +433,8 @@ fun AsistenciaView(
     if (mostrarEliminarModal && asistenciaAEliminar != null) {
         ModalBottomSheet(
             onDismissRequest = {
-                mostrarEliminarModal = false
-                asistenciaAEliminar = null
+                view.onMostrarEliminarModal(false)
+                view.onAsistenciaAEliminar(null)
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -422,19 +466,25 @@ fun AsistenciaView(
                     AppSecondaryButton(
                         text = "Cancelar",
                         onClick = {
-                            mostrarEliminarModal = false
-                            asistenciaAEliminar = null
+                            view.onMostrarEliminarModal(false)
+                            view.onAsistenciaAEliminar(null)
                         },
                         modifier = Modifier.weight(1f)
                     )
                     AppPrimaryButton(
                         text = "Eliminar",
                         onClick = {
-                            val asistencia = asistenciaAEliminar ?: return@AppPrimaryButton
-                            val eliminado = onEliminar(asistencia.id)
+                            val eliminado = onEliminar()
                             if (eliminado) {
-                                mostrarEliminarModal = false
-                                asistenciaAEliminar = null
+                                view.onMostrarEliminarModal(false)
+                                view.onAsistenciaAEliminar(null)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Asistencia eliminada")
+                                }
+                            } else {
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("No se pudo eliminar")
+                                }
                             }
                         },
                         modifier = Modifier.weight(1f)

@@ -32,6 +32,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.Icon
@@ -40,9 +42,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,22 +59,107 @@ import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AppTextField
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+interface IInscritoView {
+    val inscritos: StateFlow<List<EstudianteModel>>
+    val mostrarModal: StateFlow<Boolean>
+    val mostrarEliminarModal: StateFlow<Boolean>
+    val estudianteSeleccionado: StateFlow<EstudianteModel?>
+    val carnet: StateFlow<String>
+    val nombre: StateFlow<String>
+    val apellido: StateFlow<String>
+
+    fun setInscritos(inscritos: List<EstudianteModel>)
+    fun onMostrarModal(valor: Boolean)
+    fun onMostrarEliminarModal(valor: Boolean)
+    fun onEstudianteSeleccionado(estudiante: EstudianteModel?)
+    fun onCarnetChange(valor: String)
+    fun onNombreChange(valor: String)
+    fun onApellidoChange(valor: String)
+    fun limpiarFormulario()
+}
+
+class InscritoViewData : IInscritoView {
+    private val _inscritos = MutableStateFlow<List<EstudianteModel>>(emptyList())
+    override val inscritos: StateFlow<List<EstudianteModel>> = _inscritos.asStateFlow()
+
+    private val _mostrarModal = MutableStateFlow(false)
+    override val mostrarModal: StateFlow<Boolean> = _mostrarModal.asStateFlow()
+
+    private val _mostrarEliminarModal = MutableStateFlow(false)
+    override val mostrarEliminarModal: StateFlow<Boolean> = _mostrarEliminarModal.asStateFlow()
+
+    private val _estudianteSeleccionado = MutableStateFlow<EstudianteModel?>(null)
+    override val estudianteSeleccionado: StateFlow<EstudianteModel?> = _estudianteSeleccionado.asStateFlow()
+
+    private val _carnet = MutableStateFlow("")
+    override val carnet: StateFlow<String> = _carnet.asStateFlow()
+
+    private val _nombre = MutableStateFlow("")
+    override val nombre: StateFlow<String> = _nombre.asStateFlow()
+
+    private val _apellido = MutableStateFlow("")
+    override val apellido: StateFlow<String> = _apellido.asStateFlow()
+
+    override fun setInscritos(inscritos: List<EstudianteModel>) {
+        _inscritos.value = inscritos
+    }
+
+    override fun onMostrarModal(valor: Boolean) {
+        _mostrarModal.value = valor
+    }
+
+    override fun onMostrarEliminarModal(valor: Boolean) {
+        _mostrarEliminarModal.value = valor
+    }
+
+    override fun onEstudianteSeleccionado(estudiante: EstudianteModel?) {
+        _estudianteSeleccionado.value = estudiante
+    }
+
+    override fun onCarnetChange(valor: String) {
+        _carnet.value = valor.filter(Char::isDigit)
+    }
+
+    override fun onNombreChange(valor: String) {
+        _nombre.value = valor
+    }
+
+    override fun onApellidoChange(valor: String) {
+        _apellido.value = valor
+    }
+
+    override fun limpiarFormulario() {
+        _carnet.value = ""
+        _nombre.value = ""
+        _apellido.value = ""
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InscritoView(
-    model: InscritoModel,
+    view: IInscritoView,
     materiaNombre: String,
     onVolver: () -> Unit,
-    onAgregar: (EstudianteModel) -> Boolean,
-    onEliminar: (EstudianteModel) -> Boolean,
+    onAgregar: () -> Boolean,
+    onEliminar: () -> Boolean,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val inscritos by model.inscritosMateria.collectAsState()
-    var mostrarModal by remember { mutableStateOf(false) }
-    var mostrarEliminarModal by remember { mutableStateOf(false) }
-    var estudianteSeleccionado by remember { mutableStateOf<EstudianteModel?>(null) }
+    val inscritos by view.inscritos.collectAsState()
+    val mostrarModal by view.mostrarModal.collectAsState()
+    val mostrarEliminarModal by view.mostrarEliminarModal.collectAsState()
+    val estudianteSeleccionado by view.estudianteSeleccionado.collectAsState()
+    val carnet by view.carnet.collectAsState()
+    val nombre by view.nombre.collectAsState()
+    val apellido by view.apellido.collectAsState()
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -100,6 +186,7 @@ fun InscritoView(
         )
 
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
             topBar = {
                 TopAppBar(
                     title = {
@@ -146,7 +233,7 @@ fun InscritoView(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        AppSecondaryButton(text = "Agregar", onClick = { mostrarModal = true }, modifier = Modifier.weight(1f))
+                        AppSecondaryButton(text = "Agregar", onClick = { view.onMostrarModal(true) }, modifier = Modifier.weight(1f))
                     }
 
                     Card(
@@ -216,8 +303,8 @@ fun InscritoView(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            estudianteSeleccionado = estudiante
-                                            mostrarEliminarModal = true
+                                            view.onEstudianteSeleccionado(estudiante)
+                                            view.onMostrarEliminarModal(true)
                                         },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
@@ -273,12 +360,8 @@ fun InscritoView(
     }
 
     if (mostrarModal) {
-        var carnet by remember { mutableStateOf("") }
-        var nombre by remember { mutableStateOf("") }
-        var apellido by remember { mutableStateOf("") }
-
         ModalBottomSheet(
-            onDismissRequest = { mostrarModal = false },
+            onDismissRequest = { view.onMostrarModal(false) },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onBackground
         ) {
@@ -296,7 +379,7 @@ fun InscritoView(
                 )
                 AppTextField(
                     value = carnet,
-                    onValueChange = { carnet = it.filter(Char::isDigit) },
+                    onValueChange = view::onCarnetChange,
                     label = "Carnet",
                     leadingIcon = Icons.Filled.Badge,
                     keyboardType = KeyboardType.Number,
@@ -304,7 +387,7 @@ fun InscritoView(
                 )
                 AppTextField(
                     value = nombre,
-                    onValueChange = { nombre = it },
+                    onValueChange = view::onNombreChange,
                     label = "Nombre",
                     leadingIcon = Icons.Filled.Person,
                     keyboardType = KeyboardType.Text,
@@ -312,7 +395,7 @@ fun InscritoView(
                 )
                 AppTextField(
                     value = apellido,
-                    onValueChange = { apellido = it },
+                    onValueChange = view::onApellidoChange,
                     label = "Apellido",
                     leadingIcon = Icons.Filled.Person,
                     keyboardType = KeyboardType.Text,
@@ -321,25 +404,23 @@ fun InscritoView(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AppSecondaryButton(
                         text = "Cancelar",
-                        onClick = { mostrarModal = false },
+                        onClick = { view.onMostrarModal(false) },
                         modifier = Modifier.weight(1f)
                     )
                     AppPrimaryButton(
                         text = "Guardar",
                         onClick = {
-                            val carnetNumerico = carnet.toLongOrNull() ?: return@AppPrimaryButton
-                            val agregado = onAgregar(
-                                EstudianteModel(
-                                    carnetIdentidad = carnetNumerico,
-                                    nombre = nombre,
-                                    apellido = apellido,
-                                )
-                            )
+                            val agregado = onAgregar()
                             if (agregado) {
-                                carnet = ""
-                                nombre = ""
-                                apellido = ""
-                                mostrarModal = false
+                                view.limpiarFormulario()
+                                view.onMostrarModal(false)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Estudiante agregado correctamente")
+                                }
+                            } else {
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("No se pudo agregar el estudiante")
+                                }
                             }
                         },
                         modifier = Modifier.weight(1f)
@@ -353,8 +434,8 @@ fun InscritoView(
     if (mostrarEliminarModal && estudianteSeleccionado != null) {
         ModalBottomSheet(
             onDismissRequest = {
-                mostrarEliminarModal = false
-                estudianteSeleccionado = null
+                view.onMostrarEliminarModal(false)
+                view.onEstudianteSeleccionado(null)
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onBackground,
@@ -378,19 +459,25 @@ fun InscritoView(
                     AppSecondaryButton(
                         text = "Cancelar",
                         onClick = {
-                            mostrarEliminarModal = false
-                            estudianteSeleccionado = null
+                            view.onMostrarEliminarModal(false)
+                            view.onEstudianteSeleccionado(null)
                         },
                         modifier = Modifier.weight(1f),
                     )
                     AppPrimaryButton(
                         text = "Eliminar",
                         onClick = {
-                            val estudiante = estudianteSeleccionado ?: return@AppPrimaryButton
-                            val eliminado = onEliminar(estudiante)
+                            val eliminado = onEliminar()
                             if (eliminado) {
-                                mostrarEliminarModal = false
-                                estudianteSeleccionado = null
+                                view.onMostrarEliminarModal(false)
+                                view.onEstudianteSeleccionado(null)
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("Inscripción eliminada")
+                                }
+                            } else {
+                                coroutineScope.launch {
+                                    snackbarHostState.showSnackbar("No se pudo eliminar")
+                                }
                             }
                         },
                         modifier = Modifier.weight(1f),

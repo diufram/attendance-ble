@@ -4,29 +4,23 @@ import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
-import com.example.attendance.navigation.AppNavigation
 import com.example.attendance.util.QrUtils
+import com.example.attendance.view.IAsistenciaView
 
 class AsistenciaController(
     private val asistenciaModel: AsistenciaModel,
     private val docenteModel: DocenteModel,
     private val inscritoModel: InscritoModel,
     private val materiaModel: MateriaModel,
-    private val navigator: AppNavigation,
+    private val view: IAsistenciaView,
 ) {
-    fun irInscritos(materiaId: Long) {
-        navigator.irInscritosView(materiaId)
+    fun iniciar(materiaId: Long) {
+        asistenciaModel.cargarAsistenciasMateria(materiaId)
+        view.setAsistencias(asistenciaModel.asistenciasMateria.value)
     }
 
-    fun irCrearAsistencia(materiaId: Long) {
-        navigator.irNuevaAsistenciaView(materiaId)
-    }
-
-    fun abrirDetalle(materiaId: Long, asistenciaId: Long) {
-        navigator.irAsistenciaDetalleView(materiaId, asistenciaId)
-    }
-
-    fun eliminar(materiaId: Long, asistenciaId: Long): Boolean {
+    fun eliminar(materiaId: Long): Boolean {
+        val asistenciaId = view.asistenciaAEliminar.value?.id ?: return false
         val eliminado = asistenciaModel.eliminar(
             AsistenciaModel(
                 id = asistenciaId,
@@ -35,6 +29,7 @@ class AsistenciaController(
         )
         if (!eliminado) return false
         asistenciaModel.cargarAsistenciasMateria(materiaId)
+        view.setAsistencias(asistenciaModel.asistenciasMateria.value)
         return true
     }
 
@@ -48,8 +43,5 @@ class AsistenciaController(
                 it.carnetIdentidad to bitmap
             }
         return QrUtils.construirPayloadQrMateria(materia, docente, inscritos)
-    }
-    fun volver() {
-        navigator.volver()
     }
 }

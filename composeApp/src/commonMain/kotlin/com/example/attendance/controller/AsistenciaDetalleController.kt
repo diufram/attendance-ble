@@ -3,27 +3,51 @@ package com.example.attendance.controller
 import com.example.attendance.ble.BleTeacherService
 import com.example.attendance.model.AsistenciaDetalleModel
 import com.example.attendance.model.AsistenciaModel
+import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.MateriaModel
-import com.example.attendance.navigation.AppNavigation
+import com.example.attendance.view.IAsistenciaDetalleView
 import kotlinx.coroutines.flow.StateFlow
 
 class AsistenciaDetalleController(
     private val asistenciaModel: AsistenciaModel,
     private val asistenciaDetalleModel: AsistenciaDetalleModel,
-    private val navigator: AppNavigation,
+    private val estudianteModel: EstudianteModel,
+    private val view: IAsistenciaDetalleView,
 ) {
     private val bleService = BleTeacherService()
+
     val bleActivo: StateFlow<Boolean> = bleService.bleActivo
     val bleEstado: StateFlow<String> = bleService.bleEstado
 
-    fun guardar(asistencia: AsistenciaModel): Boolean {
+    fun iniciar(asistenciaId: Long, esNueva: Boolean, materiaId: Long) {
+        if (esNueva) {
+            // Cargar estudiantes inscritos para nueva asistencia
+            val alumnos = estudianteModel.obtenerPorMateria(materiaId)
+            val detallesTemporales = alumnos.mapIndexed { index, alumno ->
+                AsistenciaDetalleModel(
+                    id = index.toLong(),
+                    asistenciaId = -1L,
+                    carnetIdentidad = alumno.carnetIdentidad,
+                    estado = "FALTA",
+                    nombreEstudiante = alumno.nombre,
+                    apellidoEstudiante = alumno.apellido,
+                    bitmapIndexEstudiante = index,
+                )
+            }
+            view.setDetalles(detallesTemporales)
+        } else {
+            asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
+            view.setDetalles(asistenciaDetalleModel.detallesAsistencia.value)
+        }
+    }
+
+    fun guardar(materiaId: Long, asistenciaId: Long, esNueva: Boolean): Boolean {
         return try {
-            val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
-            val esNueva = asistencia.id <= 0L
+            val detallesActuales = view.detalles.value
 
             if (esNueva) {
                 val nuevaAsistenciaId = asistenciaModel.guardar(
-                    AsistenciaModel(materiaId = asistencia.materiaId)
+                    AsistenciaModel(materiaId = materiaId)
                 )
                 detallesActuales.forEach { detalle ->
                     asistenciaDetalleModel.crear(
@@ -38,15 +62,16 @@ class AsistenciaDetalleController(
             } else {
                 detallesActuales.forEach { detalle ->
                     asistenciaDetalleModel.actualizarEstado(
-                        asistenciaId = asistencia.id,
+                        asistenciaId = asistenciaId,
                         carnetIdentidad = detalle.carnetIdentidad,
                         estado = detalle.estado,
                     )
                 }
-                asistenciaDetalleModel.cargarDetallesAsistencia(asistencia.id)
+                asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
             }
 
-            asistenciaModel.cargarAsistenciasMateria(asistencia.materiaId)
+            view.setDetalles(asistenciaDetalleModel.detallesAsistencia.value)
+            asistenciaModel.cargarAsistenciasMateria(materiaId)
             true
         } catch (_: Exception) {
             false
@@ -56,7 +81,7 @@ class AsistenciaDetalleController(
     fun alternarEstado(detalleSeleccionado: AsistenciaDetalleModel) {
         val nuevoEstado = if (detalleSeleccionado.estado == "PRESENTE") "FALTA" else "PRESENTE"
 
-        val detallesActuales = asistenciaDetalleModel.detallesAsistencia.value
+        val detallesActuales = view.detalles.value
         val detallesActualizados = detallesActuales.map { detalle ->
             if (detalle.carnetIdentidad == detalleSeleccionado.carnetIdentidad) {
                 detalle.copy(estado = nuevoEstado)
@@ -64,7 +89,7 @@ class AsistenciaDetalleController(
                 detalle
             }
         }
-        asistenciaDetalleModel.cargarDetallesTemporales(detallesActualizados)
+        view.setDetalles(detallesActualizados)
 
         val detalle = detallesActuales.firstOrNull { it.carnetIdentidad == detalleSeleccionado.carnetIdentidad }
         val bitmapIndex = detalle?.bitmapIndexEstudiante
@@ -74,7 +99,7 @@ class AsistenciaDetalleController(
     }
 
     fun onIniciarEscaneo(materia: MateriaModel): String? {
-        val detalles = asistenciaDetalleModel.detallesAsistencia.value
+        val detalles = view.detalles.value
         if (detalles.isEmpty()) return "No hay estudiantes para iniciar BLE"
 
         val presenciasIniciales = detalles.mapNotNull { detalle ->
@@ -88,19 +113,19 @@ class AsistenciaDetalleController(
             totalEstudiantes = detalles.size,
             presenciasIniciales = presenciasIniciales,
             onMarcadoPresente = { bitmapIndex, _ ->
-                val detalle = asistenciaDetalleModel.detallesAsistencia.value.firstOrNull {
+                val detalle = view.detalles.value.firstOrNull {
                     it.bitmapIndexEstudiante == bitmapIndex
                 }
 
                 if (detalle != null && detalle.estado != "PRESENTE") {
-                    val actualizados = asistenciaDetalleModel.detallesAsistencia.value.map { item ->
+                    val actualizados = view.detalles.value.map { item ->
                         if (item.carnetIdentidad == detalle.carnetIdentidad) {
                             item.copy(estado = "PRESENTE")
                         } else {
                             item
                         }
                     }
-                    asistenciaDetalleModel.cargarDetallesTemporales(actualizados)
+                    view.setDetalles(actualizados)
                 }
             },
         )
@@ -108,10 +133,5 @@ class AsistenciaDetalleController(
 
     fun detenerEscaneo() {
         bleService.detenerBleDocente()
-    }
-
-    fun volver() {
-        detenerEscaneo()
-        navigator.volver()
     }
 }

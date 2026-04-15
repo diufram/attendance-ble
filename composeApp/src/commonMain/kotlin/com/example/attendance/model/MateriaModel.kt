@@ -21,6 +21,40 @@ class MateriaModel(
     val materiasUsuario: StateFlow<List<MateriaModel>> = _materiasUsuario
 
 
+    fun cargarMaterias(carnet: Long, esDocente: Boolean) {
+        val database = requireDb()
+        _usuarioCarnet.value = carnet
+
+        _materiasUsuario.value = if (esDocente) {
+            database.materiaQueries.getMateriasByDocente(carnet.toLong())
+                .executeAsList()
+                .map {
+                    MateriaModel(
+                        id = it.id,
+                        sigla = it.sigla,
+                        nombre = it.nombre,
+                        grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteCarnet = it.docente_carnet
+                    )
+                }
+        } else {
+            database.inscritoQueries.getMateriasByEstudiante(carnet.toLong())
+                .executeAsList()
+                .map {
+                    MateriaModel(
+                        id = it.id,
+                        sigla = it.sigla,
+                        nombre = it.nombre,
+                        grupo = it.grupo,
+                        periodo = it.periodo,
+                        docenteCarnet = it.docente_carnet,
+                        bitmapIndexEstudiante = it.bitmap_index_estudiante.toInt()
+                    )
+                }
+        }
+    }
+
     fun crear(materia: MateriaModel): MateriaModel? {
         val database = requireDb()
 
@@ -95,40 +129,6 @@ class MateriaModel(
         return runCatching {
             database.materiaQueries.deleteMateria(materia.id)
         }.isSuccess
-    }
-    
-    fun cargarMaterias(carnet: Long, esDocente: Boolean) {
-        val database = requireDb()
-        _usuarioCarnet.value = carnet
-
-        _materiasUsuario.value = if (esDocente) {
-            database.materiaQueries.getMateriasByDocente(carnet.toLong())
-                .executeAsList()
-                .map {
-                    MateriaModel(
-                        id = it.id,
-                        sigla = it.sigla,
-                        nombre = it.nombre,
-                        grupo = it.grupo,
-                        periodo = it.periodo,
-                        docenteCarnet = it.docente_carnet
-                    )
-                }
-        } else {
-            database.inscritoQueries.getMateriasByEstudiante(carnet.toLong())
-                .executeAsList()
-                .map {
-                    MateriaModel(
-                        id = it.id,
-                        sigla = it.sigla,
-                        nombre = it.nombre,
-                        grupo = it.grupo,
-                        periodo = it.periodo,
-                        docenteCarnet = it.docente_carnet,
-                        bitmapIndexEstudiante = it.bitmap_index_estudiante.toInt()
-                    )
-                }
-        }
     }
 
     fun limpiarMaterias() {

@@ -53,25 +53,61 @@ import androidx.compose.ui.unit.dp
 import com.example.attendance.ble.rememberRequestBlePermissions
 import com.example.attendance.model.AsistenciaDetalleModel
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+interface IAsistenciaDetalleView {
+    val detalles: StateFlow<List<AsistenciaDetalleModel>>
+    val bleActivo: StateFlow<Boolean>
+    val bleEstado: StateFlow<String>
+
+    fun setDetalles(detalles: List<AsistenciaDetalleModel>)
+    fun onBleActivo(valor: Boolean)
+    fun onBleEstado(valor: String)
+}
+
+class AsistenciaDetalleViewData : IAsistenciaDetalleView {
+    private val _detalles = MutableStateFlow<List<AsistenciaDetalleModel>>(emptyList())
+    override val detalles: StateFlow<List<AsistenciaDetalleModel>> = _detalles.asStateFlow()
+
+    private val _bleActivo = MutableStateFlow(false)
+    override val bleActivo: StateFlow<Boolean> = _bleActivo.asStateFlow()
+
+    private val _bleEstado = MutableStateFlow("BLE inactivo")
+    override val bleEstado: StateFlow<String> = _bleEstado.asStateFlow()
+
+    override fun setDetalles(detalles: List<AsistenciaDetalleModel>) {
+        _detalles.value = detalles
+    }
+
+    override fun onBleActivo(valor: Boolean) {
+        _bleActivo.value = valor
+    }
+
+    override fun onBleEstado(valor: String) {
+        _bleEstado.value = valor
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciaDetalleView(
-    model: AsistenciaDetalleModel,
+    view: IAsistenciaDetalleView,
     materiaSigla: String,
     materiaGrupo: String,
-    bleActivo: Boolean,
-    bleEstado: String,
     onVolver: () -> Unit,
-    onAlternarEstado: (AsistenciaDetalleModel) -> Unit,
     onIniciarEscaneo: () -> Unit,
     onDetenerEscaneo: () -> Unit,
+    onAlternarEstado: (AsistenciaDetalleModel) -> Unit,
     onGuardar: () -> Unit,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val detalles by model.detallesAsistencia.collectAsState()
+    val detalles by view.detalles.collectAsState()
+    val bleActivo by view.bleActivo.collectAsState()
+    val bleEstado by view.bleEstado.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 

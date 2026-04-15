@@ -2,27 +2,32 @@ package com.example.attendance.controller
 
 import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.InscritoModel
-import com.example.attendance.navigation.AppNavigation
+import com.example.attendance.view.IInscritoView
 
 class InscritoController(
     private val estudianteModel: EstudianteModel,
     private val inscritoModel: InscritoModel,
-    private val navigator: AppNavigation,
+    private val view: IInscritoView,
 ) {
-    fun agregar(materiaId: Long, estudiante: EstudianteModel): Boolean {
+    fun iniciar(materiaId: Long) {
+        inscritoModel.cargarInscritosMateria(materiaId)
+        view.setInscritos(inscritoModel.inscritosMateria.value)
+    }
+
+    fun agregar(materiaId: Long): Boolean {
         try {
-            val carnet = estudiante.carnetIdentidad.toInt()
-            val nombre = estudiante.nombre.trim()
-            val apellido = estudiante.apellido.trim()
+            val carnet = view.carnet.value.toLongOrNull() ?: return false
+            val nombre = view.nombre.value.trim()
+            val apellido = view.apellido.value.trim()
 
             if (carnet <= 0 || nombre.isBlank() || apellido.isBlank()) {
                 return false
             }
 
-            val estudianteExistente = estudianteModel.obtenerPorCarnet(carnet.toLong())
+            val estudianteExistente = estudianteModel.obtenerPorCarnet(carnet)
 
             if (estudianteExistente != null) {
-                if (estudianteExistente.nombre != nombre.trim() || estudianteExistente.apellido != apellido.trim()) {
+                if (estudianteExistente.nombre != nombre || estudianteExistente.apellido != apellido) {
                     estudianteModel.actualizar(
                         EstudianteModel(
                             id = estudianteExistente.id,
@@ -34,7 +39,7 @@ class InscritoController(
                 }
             } else {
                 val nuevoEstudiante = EstudianteModel(
-                    carnetIdentidad = carnet.toLong(),
+                    carnetIdentidad = carnet,
                     nombre = nombre,
                     apellido = apellido,
                 )
@@ -44,25 +49,31 @@ class InscritoController(
             inscritoModel.crear(
                 InscritoModel(
                     materiaId = materiaId,
-                    carnetIdentidad = carnet.toLong(),
+                    carnetIdentidad = carnet,
                 )
             )
             inscritoModel.cargarInscritosMateria(materiaId)
+            view.setInscritos(inscritoModel.inscritosMateria.value)
             return true
         } catch (_: Exception) {
             return false
         }
     }
-    fun eliminar(inscrito: InscritoModel): Boolean {
+
+    fun eliminar(materiaId: Long): Boolean {
+        val estudiante = view.estudianteSeleccionado.value ?: return false
         return try {
-            inscritoModel.eliminar(inscrito)
-            inscritoModel.cargarInscritosMateria(inscrito.materiaId)
+            inscritoModel.eliminar(
+                InscritoModel(
+                    materiaId = materiaId,
+                    carnetIdentidad = estudiante.carnetIdentidad,
+                )
+            )
+            inscritoModel.cargarInscritosMateria(materiaId)
+            view.setInscritos(inscritoModel.inscritosMateria.value)
             true
         } catch (_: Exception) {
             false
         }
-    }
-    fun volver() {
-        navigator.volver()
     }
 }

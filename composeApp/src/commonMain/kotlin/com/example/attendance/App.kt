@@ -87,21 +87,26 @@ fun App(db: Database) {
         )
     }
 
-    val asistenciaDetalleController = remember(appNavigation) {
+    val asistenciaDetalleView = remember { AsistenciaDetalleViewData() }
+
+    val asistenciaDetalleController = remember {
         AsistenciaDetalleController(
             asistenciaModel = asistenciaModel,
             asistenciaDetalleModel = asistenciaDetalleModel,
-            navigator = appNavigation
+            estudianteModel = estudianteModel,
+            view = asistenciaDetalleView
         )
     }
 
-    val asistenciaController = remember(appNavigation) {
+    val asistenciaView = remember { AsistenciaViewData() }
+
+    val asistenciaController = remember {
         AsistenciaController(
             asistenciaModel = asistenciaModel,
             docenteModel = docenteModel,
             inscritoModel = inscritoModel,
             materiaModel = materiaModel,
-            navigator = appNavigation
+            view = asistenciaView
         )
     }
 
@@ -126,15 +131,17 @@ fun App(db: Database) {
         )
     }
 
-    val inscritosController = remember(appNavigation) {
+    val inscritoView = remember { InscritoViewData() }
+
+    val inscritosController = remember {
         InscritoController(
             estudianteModel = estudianteModel,
             inscritoModel = inscritoModel,
-            navigator = appNavigation
+            view = inscritoView
         )
     }
 
-    val authController = remember(appNavigation, asistenciaController, asistenciaDetalleController) {
+    val authController = remember {
         AuthController(
             docenteModel = docenteModel,
             estudianteModel = estudianteModel,
@@ -215,20 +222,20 @@ fun App(db: Database) {
                 val materiaQrDetalle = materia?.let { "${it.nombre} - ${it.sigla} - ${it.grupo}" } ?: materiaNombre
 
                 LaunchedEffect(materiaId) {
-                    asistenciaModel.cargarAsistenciasMateria(materiaId)
+                    asistenciaController.iniciar(materiaId)
                 }
 
                 AsistenciaView(
+                    view = asistenciaView,
                     materiaId = materiaId,
                     materiaNombre = materiaNombre,
                     materiaQrDetalle = materiaQrDetalle,
-                    model = asistenciaModel,
-                    onVolver = asistenciaController::volver,
-                    onIrInscritos = { asistenciaController.irInscritos(materiaId) },
-                    onIrCrearAsistencia = { asistenciaController.irCrearAsistencia(materiaId) },
-                    onAbrirDetalle = { asistenciaId -> asistenciaController.abrirDetalle(materiaId, asistenciaId) },
-                    onEliminar = { asistenciaId -> asistenciaController.eliminar(materiaId, asistenciaId) },
+                    onVolver = { appNavigation.volver() },
+                    onIrInscritos = { appNavigation.irInscritosView(materiaId) },
+                    onIrCrearAsistencia = { appNavigation.irAsistenciaDetalleView(materiaId, -1L) },
+                    onAbrirDetalle = { asistenciaId -> appNavigation.irAsistenciaDetalleView(materiaId, asistenciaId) },
                     onGenerarQr = { asistenciaController.generarQr(materiaId) },
+                    onEliminar = { asistenciaController.eliminar(materiaId) },
                 )
             }
 
@@ -244,29 +251,15 @@ fun App(db: Database) {
                 val materiaNombre = materia?.let { "${it.sigla} - ${it.grupo}" } ?: "Inscritos"
 
                 LaunchedEffect(materiaId) {
-                    inscritoModel.cargarInscritosMateria(materiaId)
+                    inscritosController.iniciar(materiaId)
                 }
 
                 InscritoView(
-                    model = inscritoModel,
-
+                    view = inscritoView,
                     materiaNombre = materiaNombre,
-                    onVolver = inscritosController::volver,
-                    onAgregar = { estudiante ->
-                        inscritosController.agregar(materiaId, estudiante)
-                    },
-                    onEliminar = { estudiante ->
-                        if (materia != null) {
-                            inscritosController.eliminar(
-                                InscritoModel(
-                                    materiaId = materia.id,
-                                    carnetIdentidad = estudiante.carnetIdentidad,
-                                )
-                            )
-                        } else {
-                            false
-                        }
-                    },
+                    onVolver = { appNavigation.volver() },
+                    onAgregar = { inscritosController.agregar(materiaId) },
+                    onEliminar = { inscritosController.eliminar(materiaId) },
                 )
             }
 
@@ -286,54 +279,33 @@ fun App(db: Database) {
                 val esNueva = asistenciaId == -1L
 
                 val materiaActiva = materiaModel.materiasUsuario.value.firstOrNull { it.id == materiaId }
-                val bleActivo by asistenciaDetalleController.bleActivo.collectAsState()
-                val bleEstado by asistenciaDetalleController.bleEstado.collectAsState()
+
+                LaunchedEffect(asistenciaId) {
+                    asistenciaDetalleController.iniciar(asistenciaId, esNueva, materiaId)
+                }
 
                 DisposableEffect(asistenciaId) {
-                    if (esNueva) {
-                        val alumnos = estudianteModel.obtenerPorMateria(materiaId)
-                        val detallesTemporales = alumnos.mapIndexed { index, alumno ->
-                            AsistenciaDetalleModel(
-                                id = index.toLong(),
-                                asistenciaId = -1L,
-                                carnetIdentidad = alumno.carnetIdentidad,
-                                estado = "FALTA",
-                                nombreEstudiante = alumno.nombre,
-                                apellidoEstudiante = alumno.apellido,
-                                bitmapIndexEstudiante = index,
-                            )
-                        }
-                        asistenciaDetalleModel.cargarDetallesTemporales(detallesTemporales)
-                    } else {
-                        asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
-                    }
                     onDispose {
                         asistenciaDetalleController.detenerEscaneo()
                     }
                 }
 
                 AsistenciaDetalleView(
-                    model = asistenciaDetalleModel,
+                    view = asistenciaDetalleView,
                     materiaSigla = materiaActiva?.sigla.orEmpty(),
                     materiaGrupo = materiaActiva?.grupo.orEmpty(),
-                    bleActivo = bleActivo,
-                    bleEstado = bleEstado,
-                    onVolver = asistenciaDetalleController::volver,
-                    onAlternarEstado = asistenciaDetalleController::alternarEstado,
+                    onVolver = { appNavigation.volver() },
                     onIniciarEscaneo = {
                         if (materiaActiva != null) {
                             asistenciaDetalleController.onIniciarEscaneo(materiaActiva)
                         }
                     },
                     onDetenerEscaneo = asistenciaDetalleController::detenerEscaneo,
+                    onAlternarEstado = asistenciaDetalleController::alternarEstado,
                     onGuardar = {
-                        val asistencia = AsistenciaModel(
-                            id = asistenciaId,
-                            materiaId = materiaId,
-                        )
-                        val guardado = asistenciaDetalleController.guardar(asistencia)
+                        val guardado = asistenciaDetalleController.guardar(materiaId, asistenciaId, esNueva)
                         if (guardado) {
-                            asistenciaDetalleController.volver()
+                            appNavigation.volver()
                         }
                     },
                 )
