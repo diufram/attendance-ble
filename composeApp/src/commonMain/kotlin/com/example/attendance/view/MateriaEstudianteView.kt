@@ -22,10 +22,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -40,29 +38,83 @@ import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AttendanceThemeTokens
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+
+interface IMateriaEstudianteView {
+    val materias: StateFlow<List<MateriaModel>>
+    val mostrarEscaner: StateFlow<Boolean>
+    val mostrarMateriaSheet: StateFlow<Boolean>
+    val materiaSeleccionada: StateFlow<MateriaModel?>
+    val materiaPendiente: StateFlow<MateriaModel?>
+
+    fun setMaterias(materias: List<MateriaModel>)
+    fun onMostrarEscaner(valor: Boolean)
+    fun onMateriaSeleccionada(materia: MateriaModel?)
+    fun onMateriaPendiente(materia: MateriaModel?)
+    fun onMostrarMateriaSheet(valor: Boolean)
+}
+
+class MateriaEstudianteViewData : IMateriaEstudianteView {
+    private val _materias = MutableStateFlow<List<MateriaModel>>(emptyList())
+    override val materias: StateFlow<List<MateriaModel>> = _materias.asStateFlow()
+
+    private val _mostrarEscaner = MutableStateFlow(false)
+    override val mostrarEscaner: StateFlow<Boolean> = _mostrarEscaner.asStateFlow()
+
+    private val _mostrarMateriaSheet = MutableStateFlow(false)
+    override val mostrarMateriaSheet: StateFlow<Boolean> = _mostrarMateriaSheet.asStateFlow()
+
+    private val _materiaSeleccionada = MutableStateFlow<MateriaModel?>(null)
+    override val materiaSeleccionada: StateFlow<MateriaModel?> = _materiaSeleccionada.asStateFlow()
+
+    private val _materiaPendiente = MutableStateFlow<MateriaModel?>(null)
+    override val materiaPendiente: StateFlow<MateriaModel?> = _materiaPendiente.asStateFlow()
+
+    override fun setMaterias(materias: List<MateriaModel>) {
+        _materias.value = materias
+    }
+
+    override fun onMostrarEscaner(valor: Boolean) {
+        _mostrarEscaner.value = valor
+    }
+
+    override fun onMateriaSeleccionada(materia: MateriaModel?) {
+        _materiaSeleccionada.value = materia
+    }
+
+    override fun onMateriaPendiente(materia: MateriaModel?) {
+        _materiaPendiente.value = materia
+    }
+
+    override fun onMostrarMateriaSheet(valor: Boolean) {
+        _mostrarMateriaSheet.value = valor
+    }
+}
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaEstudianteView(
-    model: MateriaModel,
+    view: IMateriaEstudianteView,
     bleEstado: String,
     bleActivoMateriaId: Long?,
     bleConfirmacion: BleConfirmacion?,
     onCerrarSesion: () -> Unit,
-    onRegistrarMateriaDesderQr: (String) -> String?,
+    onRegistrarMateriaDesdeQr: (String) -> String?,
     onMarcarAsistencia: (MateriaModel) -> String?,
     onDetenerMarcadoAsistencia: () -> Unit,
     onCerrarConfirmacionAsistencia: () -> Unit,
 ) {
-    var mostrarEscaner by remember { mutableStateOf(false) }
-    var mostrarMateriaSheet by remember { mutableStateOf(false) }
-    var materiaSeleccionada by remember { mutableStateOf<MateriaModel?>(null) }
-    var materiaPendiente by remember { mutableStateOf<MateriaModel?>(null) }
+    val mostrarEscaner by view.mostrarEscaner.collectAsState()
+    val mostrarMateriaSheet by view.mostrarMateriaSheet.collectAsState()
+    val materiaSeleccionada by view.materiaSeleccionada.collectAsState()
+    val materiaPendiente by view.materiaPendiente.collectAsState()
 
 
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materias by model.materiasUsuario.collectAsState()
+    val materias by view.materias.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -116,7 +168,7 @@ fun MateriaEstudianteView(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = { mostrarEscaner = true },
+                    onClick = { view.onMostrarEscaner(true) },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
@@ -331,7 +383,7 @@ fun MateriaEstudianteView(
                                                     if (confirmado) {
                                                         onCerrarConfirmacionAsistencia()
                                                     } else {
-                                                        materiaPendiente = null
+                                                        view.onMateriaPendiente(null)
                                                         onDetenerMarcadoAsistencia()
                                                     }
                                                 }
@@ -365,8 +417,8 @@ fun MateriaEstudianteView(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            materiaSeleccionada = materia
-                                            mostrarMateriaSheet = true
+                                            view.onMateriaSeleccionada(materia)
+                                            view.onMostrarMateriaSheet(true)
                                         },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(
@@ -443,7 +495,7 @@ fun MateriaEstudianteView(
     if (mostrarMateriaSheet) {
         val materiaActiva = materiaSeleccionada
         ModalBottomSheet(
-            onDismissRequest = { mostrarMateriaSheet = false },
+            onDismissRequest = { view.onMostrarMateriaSheet(false) },
             sheetState =  rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -504,7 +556,7 @@ fun MateriaEstudianteView(
                     AppSecondaryButton(
                         text = "Cerrar",
                         onClick = {
-                            mostrarMateriaSheet = false
+                            view.onMostrarMateriaSheet(false)
                             onDetenerMarcadoAsistencia()
                         },
                         modifier = Modifier.weight(1f)
@@ -513,9 +565,9 @@ fun MateriaEstudianteView(
                         text = "Marcar",
                         onClick = {
                             if (materiaActiva == null) return@AppPrimaryButton
-                            materiaPendiente = materiaActiva
+                            view.onMateriaPendiente(materiaActiva)
                             solicitarPermisosBle()
-                            mostrarMateriaSheet = false
+                            view.onMostrarMateriaSheet(false)
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -526,7 +578,7 @@ fun MateriaEstudianteView(
 
     if (mostrarEscaner) {
         ModalBottomSheet(
-            onDismissRequest = { mostrarEscaner = false },
+            onDismissRequest = { view.onMostrarEscaner(false) },
             sheetState =  rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -568,9 +620,9 @@ fun MateriaEstudianteView(
                         QrScannerView(
                             modifier = Modifier.fillMaxSize(),
                             onQrScanned = { payload ->
-                                val error = onRegistrarMateriaDesderQr(payload)
+                                val error = onRegistrarMateriaDesdeQr(payload)
                                 if (error == null) {
-                                    mostrarEscaner = false
+                                    view.onMostrarEscaner(false)
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Materia vinculada correctamente")
                                     }

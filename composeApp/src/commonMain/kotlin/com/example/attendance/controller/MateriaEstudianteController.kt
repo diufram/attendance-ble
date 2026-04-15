@@ -5,21 +5,27 @@ import com.example.attendance.ble.BleConfirmacion
 import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
-import com.example.attendance.navigation.AppNavigation
 import com.example.attendance.util.QrUtils
+import com.example.attendance.view.IMateriaEstudianteView
 import kotlinx.coroutines.flow.StateFlow
 
 class MateriaEstudianteController(
     private val materiaModel: MateriaModel,
     private val docenteModel: DocenteModel,
     private val inscritoModel: InscritoModel,
-    private val navigator: AppNavigation,
+    private val view: IMateriaEstudianteView,
 ) {
     private val bleService = BleStudentService()
 
     val bleEstado: StateFlow<String> = bleService.bleEstado
     val bleActivoMateriaId: StateFlow<Long?> = bleService.bleActivoMateriaId
     val bleConfirmacion: StateFlow<BleConfirmacion?> = bleService.bleConfirmacion
+
+    fun iniciar(carnet: Long) {
+        materiaModel.cargarMaterias(carnet, esDocente = false)
+        view.setMaterias(materiaModel.materiasUsuario.value)
+    }
+
     fun marcarAsistencia(materia: MateriaModel): String? {
         val bitmapIndex = materia.bitmapIndexEstudiante
             ?: return "Esta materia no tiene bitmap index asignado"
@@ -40,9 +46,8 @@ class MateriaEstudianteController(
     fun cerrarConfirmacionAsistencia() {
         bleService.cerrarConfirmacionAsistencia()
     }
-    fun registrarMateriaDesdeQr(payload: String): String? {
-        val carnet = materiaModel.usuarioCarnet.value
-            ?: return "No hay estudiante activo"
+
+    fun registrarMateriaDesdeQr(carnet: Long, payload: String): String? {
 
         val qr = QrUtils.parsearQrMateria(payload) ?: return "QR invalido"
         val bitmapIndex = qr.bitmapIndexPorCarnet[carnet.toInt()]
@@ -83,6 +88,7 @@ class MateriaEstudianteController(
                 )
             )
             materiaModel.cargarMaterias(carnet, esDocente = false)
+            view.setMaterias(materiaModel.materiasUsuario.value)
             null
         } catch (_: Throwable) {
             "No se pudo guardar la inscripcion desde el QR"
@@ -91,6 +97,6 @@ class MateriaEstudianteController(
     fun cerrarSesion() {
         detenerMarcadoAsistencia()
         materiaModel.limpiarMaterias()
-        navigator.irLoginView()
+        view.setMaterias(emptyList())
     }
 }

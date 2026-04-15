@@ -106,6 +106,7 @@ fun App(db: Database) {
     }
 
     val materiaDocenteView = remember { MateriaDocenteViewData() }
+    val materiaEstudianteView = remember { MateriaEstudianteViewData() }
     val loginView = remember { LoginViewData() }
     val registroView = remember { RegistroViewData() }
 
@@ -116,12 +117,12 @@ fun App(db: Database) {
         )
     }
 
-    val materiaEstudianteController = remember(appNavigation) {
+    val materiaEstudianteController = remember {
         MateriaEstudianteController(
             materiaModel = materiaModel,
             docenteModel = docenteModel,
             inscritoModel = inscritoModel,
-            navigator = appNavigation
+            view = materiaEstudianteView,
         )
     }
 
@@ -347,7 +348,7 @@ fun App(db: Database) {
                 val bleActivoMateriaId by materiaEstudianteController.bleActivoMateriaId.collectAsState()
                 val bleConfirmacion by materiaEstudianteController.bleConfirmacion.collectAsState()
                 LaunchedEffect(carnet) {
-                    materiaModel.cargarMaterias(carnet, esDocente = false)
+                    materiaEstudianteController.iniciar(carnet)
                 }
                 DisposableEffect(materiaEstudianteController) {
                     onDispose {
@@ -356,12 +357,17 @@ fun App(db: Database) {
                 }
 
                 MateriaEstudianteView(
-                    model = materiaModel,
+                    view = materiaEstudianteView,
                     bleEstado = bleEstado,
                     bleActivoMateriaId = bleActivoMateriaId,
                     bleConfirmacion = bleConfirmacion,
-                    onCerrarSesion = materiaEstudianteController::cerrarSesion,
-                    onRegistrarMateriaDesderQr = materiaEstudianteController::registrarMateriaDesdeQr,
+                    onCerrarSesion = {
+                        materiaEstudianteController.cerrarSesion()
+                        appNavigation.irLoginView()
+                    },
+                    onRegistrarMateriaDesdeQr = { payload ->
+                        materiaEstudianteController.registrarMateriaDesdeQr(carnet, payload)
+                    },
                     onMarcarAsistencia = materiaEstudianteController::marcarAsistencia,
                     onDetenerMarcadoAsistencia = materiaEstudianteController::detenerMarcadoAsistencia,
                     onCerrarConfirmacionAsistencia = materiaEstudianteController::cerrarConfirmacionAsistencia,
