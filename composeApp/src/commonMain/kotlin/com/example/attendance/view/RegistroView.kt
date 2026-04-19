@@ -95,9 +95,21 @@ class RegistroViewData : IRegistroView {
 
 @Composable
 fun RegistroView(
-    view: IRegistroView,
+    nombre: StateFlow<String>,
+    apellido: StateFlow<String>,
+    carnet: StateFlow<String>,
+    esDocente: StateFlow<Boolean>,
+    error: StateFlow<String>,
+    submitting: StateFlow<Boolean>,
     onRegistrar: () -> Unit,
-    onVolver: () -> Unit
+    onVolver: () -> Unit,
+    onNombreChange: (String) -> Unit,
+    onApellidoChange: (String) -> Unit,
+    onCarnetChange: (String) -> Unit,
+    onEsDocenteChange: (Boolean) -> Unit,
+    setError: (String) -> Unit,
+    setSubmitting: (Boolean) -> Unit,
+
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -112,12 +124,12 @@ fun RegistroView(
         MaterialTheme.colorScheme.onSurfaceVariant
     }
 
-    val nombre by view.nombre.collectAsState()
-    val apellido by view.apellido.collectAsState()
-    val carnet by view.carnet.collectAsState()
-    val esDocente by view.esDocente.collectAsState()
-    val error by view.error.collectAsState()
-    val submitting by view.submitting.collectAsState()
+    val nombreValue by nombre.collectAsState()
+    val apellidoValue by apellido.collectAsState()
+    val carnetValue by carnet.collectAsState()
+    val esDocenteValue by esDocente.collectAsState()
+    val errorValue by error.collectAsState()
+    val submittingValue by submitting.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -218,52 +230,52 @@ fun RegistroView(
                     ) {
                         LoginRolePill(
                             label = "Estudiante",
-                            selected = !esDocente,
+                            selected = !esDocenteValue,
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                if (submitting) return@LoginRolePill
-                                view.onEsDocenteChange(false)
+                                if (submittingValue) return@LoginRolePill
+                                onEsDocenteChange(false)
                             }
                         )
                         LoginRolePill(
                             label = "Docente",
-                            selected = esDocente,
+                            selected = esDocenteValue,
                             modifier = Modifier.weight(1f),
                             onClick = {
-                                if (submitting) return@LoginRolePill
-                                view.onEsDocenteChange(true)
+                                if (submittingValue) return@LoginRolePill
+                                onEsDocenteChange(true)
                             }
                         )
                     }
 
                     AppTextField(
-                        value = nombre,
-                        onValueChange = view::onNombreChange,
+                        value = nombreValue,
+                        onValueChange = onNombreChange,
                         label = "Nombre",
                         leadingIcon = Icons.Filled.Person,
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     AppTextField(
-                        value = apellido,
-                        onValueChange = view::onApellidoChange,
+                        value = apellidoValue,
+                        onValueChange = onApellidoChange,
                         label = "Apellido",
                         leadingIcon = Icons.Filled.Person,
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     AppTextField(
-                        value = carnet,
-                        onValueChange = view::onCarnetChange,
+                        value = carnetValue,
+                        onValueChange = onCarnetChange,
                         label = "Carnet de Identidad",
                         leadingIcon = Icons.Filled.Badge,
                         keyboardType = KeyboardType.Number,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    if (error.isNotEmpty()) {
+                    if (errorValue.isNotEmpty()) {
                         Text(
-                            text = error,
+                            text = errorValue,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Center,
@@ -277,7 +289,7 @@ fun RegistroView(
                             onRegistrar()
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !submitting
+                        enabled = !submittingValue
                     )
 
                     TextButton(

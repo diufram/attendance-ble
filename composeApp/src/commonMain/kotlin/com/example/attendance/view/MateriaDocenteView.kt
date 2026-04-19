@@ -172,24 +172,46 @@ class MateriaDocenteViewData : IMateriaDocenteView {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaDocenteView(
-    view: IMateriaDocenteView,
+    materias: StateFlow<List<MateriaModel>>,
+    sigla: StateFlow<String>,
+    nombre: StateFlow<String>,
+    grupo: StateFlow<String>,
+    periodo: StateFlow<String>,
+    mostrarModalMateria: StateFlow<Boolean>,
+    mostrarModalEliminarMateria: StateFlow<Boolean>,
+    materiaSeleccionadaAccion: StateFlow<MateriaModel?>,
+    errorMensaje: StateFlow<String?>,
     onCerrarSesion: () -> Unit,
     irAsistenciaView: (Long) -> Unit,
     onCrear: () -> Unit,
     onGuardar: () -> Unit,
     onEliminar: () -> Unit,
+    setMaterias: (List<MateriaModel>) -> Unit,
+    onSiglaChange: (String) -> Unit,
+    onNombreChange: (String) -> Unit,
+    onGrupoChange: (String) -> Unit,
+    onPeriodoChange: (String) -> Unit,
+    onAbrirModalCrear: () -> Unit,
+    onCerrarModalCrear: () -> Unit,
+    onAbrirModalEditar: (MateriaModel) -> Unit,
+    onCerrarModalEditar: () -> Unit,
+    onAbrirModalEliminar: (MateriaModel) -> Unit,
+    onCerrarModalEliminar: () -> Unit,
+    setErrorMensaje: (String?) -> Unit,
+    onCerrarError: () -> Unit,
+    limpiarFormulario: () -> Unit,
 ) {
-    val sigla by view.sigla.collectAsState()
-    val nombre by view.nombre.collectAsState()
-    val grupo by view.grupo.collectAsState()
-    val periodo by view.periodo.collectAsState()
-    val mostrarModalMateria by view.mostrarModalMateria.collectAsState()
-    val mostrarModalEliminarMateria by view.mostrarModalEliminarMateria.collectAsState()
-    val materiaSeleccionadaAccion by view.materiaSeleccionadaAccion.collectAsState()
-    val errorMensaje by view.errorMensaje.collectAsState()
+    val siglaValue by sigla.collectAsState()
+    val nombreValue by nombre.collectAsState()
+    val grupoValue by grupo.collectAsState()
+    val periodoValue by periodo.collectAsState()
+    val mostrarModalMateriaValue by mostrarModalMateria.collectAsState()
+    val mostrarModalEliminarMateriaValue by mostrarModalEliminarMateria.collectAsState()
+    val materiaSeleccionadaAccionValue by materiaSeleccionadaAccion.collectAsState()
+    val errorMensajeValue by errorMensaje.collectAsState()
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materias by view.materias.collectAsState()
+    val materiasValue by materias.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
         Box(
@@ -255,7 +277,7 @@ fun MateriaDocenteView(
             containerColor = Color.Transparent,
             floatingActionButton = {
                 ExtendedFloatingActionButton(
-                    onClick = view::onAbrirModalCrear,
+                    onClick = onAbrirModalCrear,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     icon = { Icon(Icons.Filled.Add, contentDescription = null) },
@@ -274,7 +296,7 @@ fun MateriaDocenteView(
             ) {
                 val contentModifier = Modifier.fillMaxWidth().widthIn(max = 760.dp)
 
-                if (materias.isEmpty()) {
+                if (materiasValue.isEmpty()) {
                     Card(
                         modifier = contentModifier.padding(top = 22.dp),
                         shape = RoundedCornerShape(26.dp),
@@ -335,7 +357,7 @@ fun MateriaDocenteView(
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
-                                        text = "Tienes ${materias.size} materias activas",
+                                        text = "Tienes ${materiasValue.size} materias activas",
                                         style = MaterialTheme.typography.titleMedium,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                                         fontWeight = FontWeight.SemiBold
@@ -361,7 +383,7 @@ fun MateriaDocenteView(
                             contentPadding = PaddingValues(bottom = 100.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(materias) { materia ->
+                            items(materiasValue) { materia ->
                                 Card(
                                     modifier = Modifier.fillMaxWidth().clickable { irAsistenciaView(materia.id) },
                                     shape = RoundedCornerShape(metrics.cardRadius),
@@ -403,7 +425,7 @@ fun MateriaDocenteView(
                                             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                                 IconButton(
                                                     onClick = {
-                                                        view.onAbrirModalEditar(materia)
+                                                        onAbrirModalEditar(materia)
                                                     }
                                                 ) {
                                                     Icon(
@@ -414,7 +436,7 @@ fun MateriaDocenteView(
                                                 }
                                                 IconButton(
                                                     onClick = {
-                                                        view.onAbrirModalEliminar(materia)
+                                                        onAbrirModalEliminar(materia)
                                                     }
                                                 ) {
                                                     Icon(
@@ -490,12 +512,12 @@ fun MateriaDocenteView(
         }
     }
 
-    val esModalCrear = mostrarModalMateria && materiaSeleccionadaAccion == null
-    val esModalEditar = mostrarModalMateria && materiaSeleccionadaAccion != null
+    val esModalCrear = mostrarModalMateriaValue && materiaSeleccionadaAccionValue == null
+    val esModalEditar = mostrarModalMateriaValue && materiaSeleccionadaAccionValue != null
     if (esModalCrear || esModalEditar) {
         ModalBottomSheet(
             onDismissRequest = {
-                if (esModalEditar) view.onCerrarModalEditar() else view.onCerrarModalCrear()
+                if (esModalEditar) onCerrarModalEditar() else onCerrarModalCrear()
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -519,29 +541,29 @@ fun MateriaDocenteView(
                     )
                 }
                 AppTextField(
-                    value = sigla,
-                    onValueChange = view::onSiglaChange,
+                    value = siglaValue,
+                    onValueChange = onSiglaChange,
                     label = if (esModalEditar) "Sigla" else "Sigla (ej: INF-301)",
                     leadingIcon = Icons.AutoMirrored.Filled.MenuBook,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
-                    value = nombre,
-                    onValueChange = view::onNombreChange,
+                    value = nombreValue,
+                    onValueChange = onNombreChange,
                     label = "Nombre",
                     leadingIcon = Icons.Filled.School,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
-                    value = grupo,
-                    onValueChange = view::onGrupoChange,
+                    value = grupoValue,
+                    onValueChange = onGrupoChange,
                     label = if (esModalEditar) "Grupo" else "Grupo (ej: A)",
                     leadingIcon = Icons.Filled.Groups,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
-                    value = periodo,
-                    onValueChange = view::onPeriodoChange,
+                    value = periodoValue,
+                    onValueChange = onPeriodoChange,
                     label = if (esModalEditar) "Periodo" else "Periodo (ej: 1-2026)",
                     leadingIcon = Icons.Filled.CalendarMonth,
                     modifier = Modifier.fillMaxWidth()
@@ -553,7 +575,7 @@ fun MateriaDocenteView(
                     AppSecondaryButton(
                         text = "Cancelar",
                         onClick = {
-                            if (esModalEditar) view.onCerrarModalEditar() else view.onCerrarModalCrear()
+                            if (esModalEditar) onCerrarModalEditar() else onCerrarModalCrear()
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -570,10 +592,10 @@ fun MateriaDocenteView(
         }
     }
 
-    if (mostrarModalEliminarMateria && materiaSeleccionadaAccion != null) {
+    if (mostrarModalEliminarMateriaValue && materiaSeleccionadaAccionValue != null) {
         ModalBottomSheet(
             onDismissRequest = {
-                view.onCerrarModalEliminar()
+                onCerrarModalEliminar()
             },
             sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -588,7 +610,7 @@ fun MateriaDocenteView(
             ) {
                 Text("Eliminar materia", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    text = "¿Realmente quieres eliminar ${materiaSeleccionadaAccion?.sigla} - ${materiaSeleccionadaAccion?.grupo}?",
+                    text = "¿Realmente quieres eliminar ${materiaSeleccionadaAccionValue?.sigla} - ${materiaSeleccionadaAccionValue?.grupo}?",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -599,7 +621,7 @@ fun MateriaDocenteView(
                     AppSecondaryButton(
                         text = "Cancelar",
                         onClick = {
-                            view.onCerrarModalEliminar()
+                            onCerrarModalEliminar()
                         },
                         modifier = Modifier.weight(1f),
                     )
@@ -616,12 +638,12 @@ fun MateriaDocenteView(
         }
     }
 
-    val errorActual = errorMensaje
+    val errorActual = errorMensajeValue
     if (errorActual != null) {
         AlertDialog(
-            onDismissRequest = view::onCerrarError,
+            onDismissRequest = onCerrarError,
             confirmButton = {
-                TextButton(onClick = view::onCerrarError) {
+                TextButton(onClick = onCerrarError) {
                     Text("Aceptar")
                 }
             },

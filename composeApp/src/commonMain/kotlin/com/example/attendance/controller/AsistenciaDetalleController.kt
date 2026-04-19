@@ -16,9 +16,6 @@ class AsistenciaDetalleController(
 ) {
     private val bleService = BleTeacherService()
 
-    val bleActivo: StateFlow<Boolean> = bleService.bleActivo
-    val bleEstado: StateFlow<String> = bleService.bleEstado
-
     fun iniciar(asistenciaId: Long, esNueva: Boolean, materiaId: Long) {
         if (esNueva) {
             // Cargar estudiantes inscritos para nueva asistencia
@@ -98,7 +95,7 @@ class AsistenciaDetalleController(
         }
     }
 
-    fun onIniciarEscaneo(materia: MateriaModel): String? {
+    fun iniciarEscaneo(materia: MateriaModel): String? {
         val detalles = view.detalles.value
         if (detalles.isEmpty()) return "No hay estudiantes para iniciar BLE"
 

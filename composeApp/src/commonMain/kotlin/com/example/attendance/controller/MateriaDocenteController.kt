@@ -13,11 +13,7 @@ class MateriaDocenteController(
         view.setMaterias(materiaModel.materiasUsuario.value)
     }
 
-    fun onCerrarSesion() {
-        materiaModel.limpiarMaterias()
-    }
-
-    fun onCrear() {
+    fun crear() {
         val carnet = materiaModel.usuarioCarnet.value ?: run {
             view.setErrorMensaje("No hay sesión activa")
             return
@@ -43,7 +39,7 @@ class MateriaDocenteController(
         view.onCerrarModalCrear()
     }
 
-    fun onGuardar() {
+    fun guardar() {
         val carnet = materiaModel.usuarioCarnet.value ?: run {
             view.setErrorMensaje("No hay sesión activa")
             return
@@ -71,7 +67,7 @@ class MateriaDocenteController(
         view.onCerrarModalEditar()
     }
 
-    fun onEliminar() {
+    fun eliminar() {
         val carnet = materiaModel.usuarioCarnet.value ?: run {
             view.setErrorMensaje("No hay sesión activa")
             return
@@ -88,4 +84,8 @@ class MateriaDocenteController(
         view.setMaterias(materiaModel.materiasUsuario.value)
         view.onCerrarModalEliminar()
     }
+    fun cerrarSesion() {
+        materiaModel.limpiarMaterias()
+    }
+
 }

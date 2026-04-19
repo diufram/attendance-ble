@@ -93,34 +93,43 @@ class MateriaEstudianteViewData : IMateriaEstudianteView {
         _mostrarMateriaSheet.value = valor
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MateriaEstudianteView(
-    view: IMateriaEstudianteView,
     bleEstado: String,
     bleActivoMateriaId: Long?,
     bleConfirmacion: BleConfirmacion?,
+    materias: StateFlow<List<MateriaModel>>,
+    mostrarEscaner: StateFlow<Boolean>,
+    mostrarMateriaSheet: StateFlow<Boolean>,
+    materiaSeleccionada: StateFlow<MateriaModel?>,
+    materiaPendiente: StateFlow<MateriaModel?>,
     onCerrarSesion: () -> Unit,
     onRegistrarMateriaDesdeQr: (String) -> String?,
     onMarcarAsistencia: (MateriaModel) -> String?,
     onDetenerMarcadoAsistencia: () -> Unit,
     onCerrarConfirmacionAsistencia: () -> Unit,
+    onMostrarEscaner: (Boolean) -> Unit,
+    onMateriaSeleccionada: (MateriaModel?) -> Unit,
+    onMateriaPendiente: (MateriaModel?) -> Unit,
+    onMostrarMateriaSheet: (Boolean) -> Unit,
+    setMaterias: (List<MateriaModel>) -> Unit
 ) {
-    val mostrarEscaner by view.mostrarEscaner.collectAsState()
-    val mostrarMateriaSheet by view.mostrarMateriaSheet.collectAsState()
-    val materiaSeleccionada by view.materiaSeleccionada.collectAsState()
-    val materiaPendiente by view.materiaPendiente.collectAsState()
-
+    val materiasValue by materias.collectAsState()
+    val mostrarEscanerValue by mostrarEscaner.collectAsState()
+    val mostrarMateriaSheetValue by mostrarMateriaSheet.collectAsState()
+    val materiaSeleccionadaValue by materiaSeleccionada.collectAsState()
+    val materiaPendienteValue by materiaPendiente.collectAsState()
 
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val materias by view.materias.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     val solicitarPermisosBle = rememberRequestBlePermissions(
         onGranted = {
-            val materia = materiaPendiente ?: return@rememberRequestBlePermissions
+            val materia = materiaPendienteValue ?: return@rememberRequestBlePermissions
             val error = onMarcarAsistencia(materia)
             if (error != null) {
                 coroutineScope.launch { snackbarHostState.showSnackbar(error) }
@@ -168,7 +177,7 @@ fun MateriaEstudianteView(
             snackbarHost = { SnackbarHost(snackbarHostState) },
             floatingActionButton = {
                 FloatingActionButton(
-                    onClick = { view.onMostrarEscaner(true) },
+                    onClick = { onMostrarEscaner(true) },
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
                     elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 6.dp)
@@ -217,7 +226,7 @@ fun MateriaEstudianteView(
             ) {
                 val contentModifier = Modifier.fillMaxWidth().widthIn(max = 760.dp)
 
-                if (materias.isEmpty()) {
+                if (materiasValue.isEmpty()) {
                     Card(
                         modifier = contentModifier.padding(top = 20.dp),
                         shape = RoundedCornerShape(24.dp),
@@ -273,7 +282,7 @@ fun MateriaEstudianteView(
                             ) {
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Text(
-                                        text = "Estas inscrito en ${materias.size} materias",
+                                        text = "Estas inscrito en ${materiasValue.size} materias",
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.SemiBold,
                                         color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -293,7 +302,7 @@ fun MateriaEstudianteView(
                         }
 
                         if (bleActivoMateriaId != null || bleConfirmacion != null) {
-                            val materiaActiva = materias.firstOrNull { it.id == bleActivoMateriaId }
+                            val materiaActiva = materiasValue.firstOrNull { it.id == bleActivoMateriaId }
                             val materiaConfirmada = bleConfirmacion
                             val confirmado = bleConfirmacion != null
                             val confirmCardColor = Color(0xFFDFF6E3)
@@ -383,7 +392,7 @@ fun MateriaEstudianteView(
                                                     if (confirmado) {
                                                         onCerrarConfirmacionAsistencia()
                                                     } else {
-                                                        view.onMateriaPendiente(null)
+                                                        onMateriaPendiente(null)
                                                         onDetenerMarcadoAsistencia()
                                                     }
                                                 }
@@ -412,13 +421,13 @@ fun MateriaEstudianteView(
                             contentPadding = PaddingValues(bottom = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(materias) { materia ->
+                            items(materiasValue) { materia ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            view.onMateriaSeleccionada(materia)
-                                            view.onMostrarMateriaSheet(true)
+                                            onMateriaSeleccionada(materia)
+                                            onMostrarMateriaSheet(true)
                                         },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(
@@ -492,10 +501,10 @@ fun MateriaEstudianteView(
         }
     }
 
-    if (mostrarMateriaSheet) {
-        val materiaActiva = materiaSeleccionada
+    if (mostrarMateriaSheetValue) {
+        val materiaActiva = materiaSeleccionadaValue
         ModalBottomSheet(
-            onDismissRequest = { view.onMostrarMateriaSheet(false) },
+            onDismissRequest = { onMostrarMateriaSheet(false) },
             sheetState =  rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -556,7 +565,7 @@ fun MateriaEstudianteView(
                     AppSecondaryButton(
                         text = "Cerrar",
                         onClick = {
-                            view.onMostrarMateriaSheet(false)
+                            onMostrarMateriaSheet(false)
                             onDetenerMarcadoAsistencia()
                         },
                         modifier = Modifier.weight(1f)
@@ -565,9 +574,9 @@ fun MateriaEstudianteView(
                         text = "Marcar",
                         onClick = {
                             if (materiaActiva == null) return@AppPrimaryButton
-                            view.onMateriaPendiente(materiaActiva)
+                            onMateriaPendiente(materiaActiva)
                             solicitarPermisosBle()
-                            view.onMostrarMateriaSheet(false)
+                            onMostrarMateriaSheet(false)
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -576,9 +585,9 @@ fun MateriaEstudianteView(
         }
     }
 
-    if (mostrarEscaner) {
+    if (mostrarEscanerValue) {
         ModalBottomSheet(
-            onDismissRequest = { view.onMostrarEscaner(false) },
+            onDismissRequest = { onMostrarEscaner(false) },
             sheetState =  rememberModalBottomSheetState(skipPartiallyExpanded = true),
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -622,7 +631,7 @@ fun MateriaEstudianteView(
                             onQrScanned = { payload ->
                                 val error = onRegistrarMateriaDesdeQr(payload)
                                 if (error == null) {
-                                    view.onMostrarEscaner(false)
+                                    onMostrarEscaner(false)
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar("Materia vinculada correctamente")
                                     }

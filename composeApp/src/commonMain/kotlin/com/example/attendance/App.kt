@@ -155,7 +155,12 @@ fun App(db: Database) {
 
             composable(AppRoutes.LOGIN) {
                 LoginView(
-                    view = loginView,
+                    carnet = loginView.carnet,
+                    error = loginView.error,
+                    submitting = loginView.submitting,
+                    onCarnetChange = loginView::onCarnetChange,
+                    setError = loginView::setError,
+                    setSubmitting = loginView::setSubmitting,
                     onLogin = {
                         val resultado = authController.onLogin() ?: return@LoginView
                         val partes = resultado.split(":")
@@ -172,7 +177,18 @@ fun App(db: Database) {
 
             composable("registro") {
                 RegistroView(
-                    view = registroView,
+                    nombre = registroView.nombre,
+                    apellido = registroView.apellido,
+                    carnet = registroView.carnet,
+                    esDocente = registroView.esDocente,
+                    error = registroView.error,
+                    submitting = registroView.submitting,
+                    onNombreChange = registroView::onNombreChange,
+                    onApellidoChange = registroView::onApellidoChange,
+                    onCarnetChange = registroView::onCarnetChange,
+                    onEsDocenteChange = registroView::onEsDocenteChange,
+                    setError = registroView::setError,
+                    setSubmitting = registroView::setSubmitting,
                     onRegistrar = {
                         val resultado = authController.onRegistrar() ?: return@RegistroView
                         val partes = resultado.split(":")
@@ -197,15 +213,37 @@ fun App(db: Database) {
                 }
 
                 MateriaDocenteView(
-                    view = materiaDocenteView,
+                    materias = materiaDocenteView.materias,
+                    sigla = materiaDocenteView.sigla,
+                    nombre = materiaDocenteView.nombre,
+                    grupo = materiaDocenteView.grupo,
+                    periodo = materiaDocenteView.periodo,
+                    mostrarModalMateria = materiaDocenteView.mostrarModalMateria,
+                    mostrarModalEliminarMateria = materiaDocenteView.mostrarModalEliminarMateria,
+                    materiaSeleccionadaAccion = materiaDocenteView.materiaSeleccionadaAccion,
+                    errorMensaje = materiaDocenteView.errorMensaje,
+                    setMaterias = materiaDocenteView::setMaterias,
+                    onSiglaChange = materiaDocenteView::onSiglaChange,
+                    onNombreChange = materiaDocenteView::onNombreChange,
+                    onGrupoChange = materiaDocenteView::onGrupoChange,
+                    onPeriodoChange = materiaDocenteView::onPeriodoChange,
+                    onAbrirModalCrear = materiaDocenteView::onAbrirModalCrear,
+                    onCerrarModalCrear = materiaDocenteView::onCerrarModalCrear,
+                    onAbrirModalEditar = materiaDocenteView::onAbrirModalEditar,
+                    onCerrarModalEditar = materiaDocenteView::onCerrarModalEditar,
+                    onAbrirModalEliminar = materiaDocenteView::onAbrirModalEliminar,
+                    onCerrarModalEliminar = materiaDocenteView::onCerrarModalEliminar,
+                    setErrorMensaje = materiaDocenteView::setErrorMensaje,
+                    onCerrarError = materiaDocenteView::onCerrarError,
+                    limpiarFormulario = materiaDocenteView::limpiarFormulario,
                     onCerrarSesion = {
-                        docenteController.onCerrarSesion()
+                        docenteController.cerrarSesion()
                         appNavigation.irLoginView()
                     },
                     irAsistenciaView = appNavigation::irAsistenciaView,
-                    onCrear = docenteController::onCrear,
-                    onGuardar = docenteController::onGuardar,
-                    onEliminar = docenteController::onEliminar,
+                    onCrear = docenteController::crear,
+                    onGuardar = docenteController::guardar,
+                    onEliminar = docenteController::eliminar,
                 )
             }
 
@@ -226,7 +264,16 @@ fun App(db: Database) {
                 }
 
                 AsistenciaView(
-                    view = asistenciaView,
+                    asistencias = asistenciaView.asistencias,
+                    mostrarQr = asistenciaView.mostrarQr,
+                    qrMatriz = asistenciaView.qrMatriz,
+                    mostrarEliminarModal = asistenciaView.mostrarEliminarModal,
+                    asistenciaAEliminar = asistenciaView.asistenciaAEliminar,
+                    onMostrarQr = asistenciaView::onMostrarQr,
+                    onQrMatriz = asistenciaView::onQrMatriz,
+                    onMostrarEliminarModal = asistenciaView::onMostrarEliminarModal,
+                    onAsistenciaAEliminar = asistenciaView::onAsistenciaAEliminar,
+                    setAsistencias = asistenciaView::setAsistencias,
                     materiaId = materiaId,
                     materiaNombre = materiaNombre,
                     materiaQrDetalle = materiaQrDetalle,
@@ -255,7 +302,20 @@ fun App(db: Database) {
                 }
 
                 InscritoView(
-                    view = inscritoView,
+                    inscritos = inscritoView.inscritos,
+                    mostrarModal = inscritoView.mostrarModal,
+                    mostrarEliminarModal = inscritoView.mostrarEliminarModal,
+                    estudianteSeleccionado = inscritoView.estudianteSeleccionado,
+                    carnet = inscritoView.carnet,
+                    nombre = inscritoView.nombre,
+                    apellido = inscritoView.apellido,
+                    onMostrarModal = inscritoView::onMostrarModal,
+                    onMostrarEliminarModal = inscritoView::onMostrarEliminarModal,
+                    onEstudianteSeleccionado = inscritoView::onEstudianteSeleccionado,
+                    onCarnetChange = inscritoView::onCarnetChange,
+                    onNombreChange = inscritoView::onNombreChange,
+                    onApellidoChange = inscritoView::onApellidoChange,
+                    limpiarFormulario = inscritoView::limpiarFormulario,
                     materiaNombre = materiaNombre,
                     onVolver = { appNavigation.volver() },
                     onAgregar = { inscritosController.agregar(materiaId) },
@@ -291,13 +351,15 @@ fun App(db: Database) {
                 }
 
                 AsistenciaDetalleView(
-                    view = asistenciaDetalleView,
+                    detalles = asistenciaDetalleView.detalles,
+                    bleActivo = asistenciaDetalleView.bleActivo,
+                    bleEstado = asistenciaDetalleView.bleEstado,
                     materiaSigla = materiaActiva?.sigla.orEmpty(),
                     materiaGrupo = materiaActiva?.grupo.orEmpty(),
                     onVolver = { appNavigation.volver() },
                     onIniciarEscaneo = {
                         if (materiaActiva != null) {
-                            asistenciaDetalleController.onIniciarEscaneo(materiaActiva)
+                            asistenciaDetalleController.iniciarEscaneo(materiaActiva)
                         }
                     },
                     onDetenerEscaneo = asistenciaDetalleController::detenerEscaneo,
@@ -329,7 +391,16 @@ fun App(db: Database) {
                 }
 
                 MateriaEstudianteView(
-                    view = materiaEstudianteView,
+                    materias = materiaEstudianteView.materias,
+                    mostrarEscaner = materiaEstudianteView.mostrarEscaner,
+                    mostrarMateriaSheet = materiaEstudianteView.mostrarMateriaSheet,
+                    materiaSeleccionada = materiaEstudianteView.materiaSeleccionada,
+                    materiaPendiente = materiaEstudianteView.materiaPendiente,
+                    onMostrarEscaner = materiaEstudianteView::onMostrarEscaner,
+                    onMateriaSeleccionada = materiaEstudianteView::onMateriaSeleccionada,
+                    onMateriaPendiente = materiaEstudianteView::onMateriaPendiente,
+                    onMostrarMateriaSheet = materiaEstudianteView::onMostrarMateriaSheet,
+                    setMaterias = materiaEstudianteView::setMaterias,
                     bleEstado = bleEstado,
                     bleActivoMateriaId = bleActivoMateriaId,
                     bleConfirmacion = bleConfirmacion,

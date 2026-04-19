@@ -63,13 +63,18 @@ class LoginViewData : ILoginView {
 
 @Composable
 fun LoginView(
-    view: ILoginView,
+    carnet: StateFlow<String>,
+    error: StateFlow<String>,
+    submitting: StateFlow<Boolean>,
+    onCarnetChange: (String) -> Unit,
     onLogin: () -> Unit,
-    onIrRegistro: () -> Unit
+    onIrRegistro: () -> Unit,
+    setError: (String) -> Unit,
+    setSubmitting: (Boolean) -> Unit,
 ) {
-    val carnet by view.carnet.collectAsState()
-    val error by view.error.collectAsState()
-    val submitting by view.submitting.collectAsState()
+    val carnetValue by carnet.collectAsState()
+    val errorValue by error.collectAsState()
+    val submittingValue by submitting.collectAsState()
 
     val metrics = AttendanceThemeTokens.metrics
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
@@ -178,17 +183,17 @@ fun LoginView(
                     )
 
                     AppTextField(
-                        value = carnet,
-                        onValueChange = view::onCarnetChange,
+                        value = carnetValue,
+                        onValueChange = onCarnetChange,
                         label = "Carnet de Identidad",
                         leadingIcon = Icons.Filled.Badge,
                         keyboardType = KeyboardType.Number,
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    if (error.isNotEmpty()) {
+                    if (errorValue.isNotEmpty()) {
                         Text(
-                            text = error,
+                            text = errorValue,
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                             textAlign = TextAlign.Center,
@@ -202,7 +207,7 @@ fun LoginView(
                             onLogin()
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !submitting
+                        enabled = !submittingValue
                     )
 
                     TextButton(

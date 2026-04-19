@@ -97,24 +97,33 @@ class AsistenciaViewData : IAsistenciaView {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciaView(
-    view: IAsistenciaView,
     materiaId: Long,
     materiaNombre: String,
     materiaQrDetalle: String,
+    asistencias: StateFlow<List<AsistenciaModel>>,
+    mostrarQr: StateFlow<Boolean>,
+    qrMatriz: StateFlow<List<List<Boolean>>>,
+    mostrarEliminarModal: StateFlow<Boolean>,
+    asistenciaAEliminar: StateFlow<AsistenciaModel?>,
     onVolver: () -> Unit,
     onIrInscritos: () -> Unit,
     onIrCrearAsistencia: () -> Unit,
     onAbrirDetalle: (Long) -> Unit,
     onGenerarQr: () -> String?,
     onEliminar: () -> Boolean,
+    onMostrarQr: (Boolean) -> Unit,
+    onQrMatriz: (List<List<Boolean>>) -> Unit,
+    onMostrarEliminarModal: (Boolean) -> Unit,
+    onAsistenciaAEliminar: (AsistenciaModel?) -> Unit,
+    setAsistencias: (List<AsistenciaModel>) -> Unit,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val asistencias by view.asistencias.collectAsState()
-    val mostrarQr by view.mostrarQr.collectAsState()
-    val qrMatriz by view.qrMatriz.collectAsState()
-    val mostrarEliminarModal by view.mostrarEliminarModal.collectAsState()
-    val asistenciaAEliminar by view.asistenciaAEliminar.collectAsState()
+    val asistenciasValue by asistencias.collectAsState()
+    val mostrarQrValue by mostrarQr.collectAsState()
+    val qrMatrizValue by qrMatriz.collectAsState()
+    val mostrarEliminarModalValue by mostrarEliminarModal.collectAsState()
+    val asistenciaAEliminarValue by asistenciaAEliminar.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -176,8 +185,8 @@ fun AsistenciaView(
                     actions = {
                         IconButton(onClick = {
                             val payload = onGenerarQr() ?: return@IconButton
-                            view.onQrMatriz(generarQrMatriz(payload))
-                            view.onMostrarQr(true)
+                            onQrMatriz(generarQrMatriz(payload))
+                            onMostrarQr(true)
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.QrCode2,
@@ -229,7 +238,7 @@ fun AsistenciaView(
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(
-                                    text = "${asistencias.size} sesiones registradas",
+                                    text = "${asistenciasValue.size} sesiones registradas",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -255,7 +264,7 @@ fun AsistenciaView(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    if (asistencias.isEmpty()) {
+                    if (asistenciasValue.isEmpty()) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(24.dp),
@@ -286,7 +295,7 @@ fun AsistenciaView(
                                 .weight(1f),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(asistencias) { asistencia ->
+                            items(asistenciasValue) { asistencia ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -327,8 +336,8 @@ fun AsistenciaView(
                                             }
                                             IconButton(
                                                 onClick = {
-                                                    view.onAsistenciaAEliminar(asistencia)
-                                                    view.onMostrarEliminarModal(true)
+                                                    onAsistenciaAEliminar(asistencia)
+                                                    onMostrarEliminarModal(true)
                                                 }
                                             ) {
                                                 Icon(
@@ -367,9 +376,9 @@ fun AsistenciaView(
         }
     }
 
-    if (mostrarQr) {
+    if (mostrarQrValue) {
         ModalBottomSheet(
-            onDismissRequest = { view.onMostrarQr(false) },
+            onDismissRequest = { onMostrarQr(false) },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurface,
             dragHandle = { BottomSheetDefaults.DragHandle() }
@@ -388,7 +397,7 @@ fun AsistenciaView(
                     textAlign = TextAlign.Center
                 )
 
-                if (qrMatriz.isNotEmpty()) {
+                if (qrMatrizValue.isNotEmpty()) {
                     Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                         Surface(
                             color = Color.White,
@@ -397,10 +406,10 @@ fun AsistenciaView(
                             Box(modifier = Modifier.padding(10.dp)) {
                                 Canvas(modifier = Modifier.size(250.dp)) {
                                     val sizePx = size.minDimension
-                                    val count = qrMatriz.size
+                                    val count = qrMatrizValue.size
                                     if (count > 0) {
                                         val cell = sizePx / count.toFloat()
-                                        qrMatriz.forEachIndexed { r, row ->
+                                        qrMatrizValue.forEachIndexed { r, row ->
                                             row.forEachIndexed { c, dark ->
                                                 if (dark) {
                                                     drawRect(
@@ -430,11 +439,11 @@ fun AsistenciaView(
         }
     }
 
-    if (mostrarEliminarModal && asistenciaAEliminar != null) {
+    if (mostrarEliminarModalValue && asistenciaAEliminarValue != null) {
         ModalBottomSheet(
             onDismissRequest = {
-                view.onMostrarEliminarModal(false)
-                view.onAsistenciaAEliminar(null)
+                onMostrarEliminarModal(false)
+                onAsistenciaAEliminar(null)
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -454,7 +463,7 @@ fun AsistenciaView(
                     textAlign = TextAlign.Center
                 )
                 Text(
-                    text = "¿Realmente quieres eliminar la asistencia #$materiaId-${asistenciaAEliminar?.id}?",
+                    text = "¿Realmente quieres eliminar la asistencia #$materiaId-${asistenciaAEliminarValue?.id}?",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -466,8 +475,8 @@ fun AsistenciaView(
                     AppSecondaryButton(
                         text = "Cancelar",
                         onClick = {
-                            view.onMostrarEliminarModal(false)
-                            view.onAsistenciaAEliminar(null)
+                            onMostrarEliminarModal(false)
+                            onAsistenciaAEliminar(null)
                         },
                         modifier = Modifier.weight(1f)
                     )
@@ -476,8 +485,8 @@ fun AsistenciaView(
                         onClick = {
                             val eliminado = onEliminar()
                             if (eliminado) {
-                                view.onMostrarEliminarModal(false)
-                                view.onAsistenciaAEliminar(null)
+                                onMostrarEliminarModal(false)
+                                onAsistenciaAEliminar(null)
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar("Asistencia eliminada")
                                 }

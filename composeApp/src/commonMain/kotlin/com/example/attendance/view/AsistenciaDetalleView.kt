@@ -94,20 +94,23 @@ class AsistenciaDetalleViewData : IAsistenciaDetalleView {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AsistenciaDetalleView(
-    view: IAsistenciaDetalleView,
     materiaSigla: String,
     materiaGrupo: String,
+    detalles: StateFlow<List<AsistenciaDetalleModel>>,
+    bleActivo: StateFlow<Boolean>,
+    bleEstado: StateFlow<String>,
     onVolver: () -> Unit,
     onIniciarEscaneo: () -> Unit,
     onDetenerEscaneo: () -> Unit,
     onAlternarEstado: (AsistenciaDetalleModel) -> Unit,
     onGuardar: () -> Unit,
 ) {
+    val detallesValue by detalles.collectAsState()
+    val bleActivoValue by bleActivo.collectAsState()
+    val bleEstadoValue by bleEstado.collectAsState()
+
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val detalles by view.detalles.collectAsState()
-    val bleActivo by view.bleActivo.collectAsState()
-    val bleEstado by view.bleEstado.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
@@ -197,7 +200,7 @@ fun AsistenciaDetalleView(
                         .padding(top = 12.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    val presentes = detalles.count { it.estado == "PRESENTE" }
+                    val presentes = detallesValue.count { it.estado == "PRESENTE" }
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(22.dp),
@@ -213,7 +216,7 @@ fun AsistenciaDetalleView(
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(
-                                    text = "$presentes presentes de ${detalles.size}",
+                                    text = "$presentes presentes de ${detallesValue.size}",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -239,7 +242,7 @@ fun AsistenciaDetalleView(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                if (bleActivo) {
+                                if (bleActivoValue) {
                                     onDetenerEscaneo()
                                 } else {
                                     solicitarPermisosBle()
@@ -247,7 +250,7 @@ fun AsistenciaDetalleView(
                             },
                         shape = RoundedCornerShape(22.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (bleActivo) {
+                            containerColor = if (bleActivoValue) {
                                 bleActiveContainer
                             } else {
                                 MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f)
@@ -255,7 +258,7 @@ fun AsistenciaDetalleView(
                         ),
                         border = BorderStroke(
                             metrics.thinBorder,
-                            if (bleActivo) bleActiveBorder.copy(alpha = 0.45f)
+                            if (bleActivoValue) bleActiveBorder.copy(alpha = 0.45f)
                             else MaterialTheme.colorScheme.tertiary.copy(alpha = 0.3f)
                         )
                     ) {
@@ -273,41 +276,41 @@ fun AsistenciaDetalleView(
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        text = if (bleActivo) "Escuchando asistencias" else "Encender Radar",
+                                        text = if (bleActivoValue) "Escuchando asistencias" else "Encender Radar",
                                         style = MaterialTheme.typography.titleSmall,
                                         fontWeight = FontWeight.SemiBold,
-                                        color = if (bleActivo) bleActiveContent else MaterialTheme.colorScheme.onTertiaryContainer
+                                        color = if (bleActivoValue) bleActiveContent else MaterialTheme.colorScheme.onTertiaryContainer
                                     )
                                     Text(
                                         text = "$materiaSigla - $materiaGrupo",
                                         style = MaterialTheme.typography.bodyMedium,
-                                        color = if (bleActivo) bleActiveContent.copy(alpha = 0.86f)
+                                        color = if (bleActivoValue) bleActiveContent.copy(alpha = 0.86f)
                                         else MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f)
                                     )
                                     Text(
-                                        text = bleEstado,
+                                        text = bleEstadoValue,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = if (bleActivo) bleActiveContent.copy(alpha = 0.76f)
+                                        color = if (bleActivoValue) bleActiveContent.copy(alpha = 0.76f)
                                         else MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.7f)
                                     )
                                     Text(
-                                        text = if (bleActivo) "Toca para detener" else "Toca para iniciar",
+                                        text = if (bleActivoValue) "Toca para detener" else "Toca para iniciar",
                                         style = MaterialTheme.typography.labelSmall,
-                                        color = if (bleActivo) bleActiveContent.copy(alpha = 0.8f)
+                                        color = if (bleActivoValue) bleActiveContent.copy(alpha = 0.8f)
                                         else MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.75f)
                                     )
                                 }
                                 Icon(
                                     imageVector = Icons.Filled.Radar,
                                     contentDescription = null,
-                                    tint = if (bleActivo) bleActiveContent else MaterialTheme.colorScheme.onTertiaryContainer,
+                                    tint = if (bleActivoValue) bleActiveContent else MaterialTheme.colorScheme.onTertiaryContainer,
                                     modifier = Modifier.size(34.dp)
                                 )
                             }
                         }
                     }
 
-                    if (detalles.isEmpty()) {
+                    if (detallesValue.isEmpty()) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(24.dp),
@@ -328,7 +331,7 @@ fun AsistenciaDetalleView(
                                 .weight(1f),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(detalles) { detalle ->
+                            items(detallesValue) { detalle ->
                                 val estadoEsPresente = detalle.estado == "PRESENTE"
                                 Card(
                                     modifier = Modifier.fillMaxWidth(),

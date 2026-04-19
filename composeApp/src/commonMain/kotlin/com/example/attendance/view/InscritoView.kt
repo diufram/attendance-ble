@@ -143,21 +143,34 @@ class InscritoViewData : IInscritoView {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InscritoView(
-    view: IInscritoView,
     materiaNombre: String,
+    inscritos: StateFlow<List<EstudianteModel>>,
+    mostrarModal: StateFlow<Boolean>,
+    mostrarEliminarModal: StateFlow<Boolean>,
+    estudianteSeleccionado: StateFlow<EstudianteModel?>,
+    carnet: StateFlow<String>,
+    nombre: StateFlow<String>,
+    apellido: StateFlow<String>,
     onVolver: () -> Unit,
     onAgregar: () -> Boolean,
     onEliminar: () -> Boolean,
+    onMostrarModal: (Boolean) -> Unit,
+    onMostrarEliminarModal: (Boolean) -> Unit,
+    onEstudianteSeleccionado: (EstudianteModel?) -> Unit,
+    onCarnetChange: (String) -> Unit,
+    onNombreChange: (String) -> Unit,
+    onApellidoChange: (String) -> Unit,
+    limpiarFormulario: () -> Unit
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
-    val inscritos by view.inscritos.collectAsState()
-    val mostrarModal by view.mostrarModal.collectAsState()
-    val mostrarEliminarModal by view.mostrarEliminarModal.collectAsState()
-    val estudianteSeleccionado by view.estudianteSeleccionado.collectAsState()
-    val carnet by view.carnet.collectAsState()
-    val nombre by view.nombre.collectAsState()
-    val apellido by view.apellido.collectAsState()
+    val inscritosValue by inscritos.collectAsState()
+    val mostrarModalValue by mostrarModal.collectAsState()
+    val mostrarEliminarModalValue by mostrarEliminarModal.collectAsState()
+    val estudianteSeleccionadoValue by estudianteSeleccionado.collectAsState()
+    val carnetValue by carnet.collectAsState()
+    val nombreValue by nombre.collectAsState()
+    val apellidoValue by apellido.collectAsState()
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -233,7 +246,7 @@ fun InscritoView(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                        AppSecondaryButton(text = "Agregar", onClick = { view.onMostrarModal(true) }, modifier = Modifier.weight(1f))
+                        AppSecondaryButton(text = "Agregar", onClick = { onMostrarModal(true) }, modifier = Modifier.weight(1f))
                     }
 
                     Card(
@@ -251,7 +264,7 @@ fun InscritoView(
                         ) {
                             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 Text(
-                                    text = "${inscritos.size} estudiantes inscritos",
+                                    text = "${inscritosValue.size} estudiantes inscritos",
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.SemiBold,
                                     color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -277,7 +290,7 @@ fun InscritoView(
                         color = MaterialTheme.colorScheme.onSurface
                     )
 
-                    if (inscritos.isEmpty()) {
+                    if (inscritosValue.isEmpty()) {
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(24.dp),
@@ -298,13 +311,13 @@ fun InscritoView(
                                 .weight(1f),
                             verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            items(inscritos) { estudiante ->
+                            items(inscritosValue) { estudiante ->
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            view.onEstudianteSeleccionado(estudiante)
-                                            view.onMostrarEliminarModal(true)
+                                            onEstudianteSeleccionado(estudiante)
+                                            onMostrarEliminarModal(true)
                                         },
                                     shape = RoundedCornerShape(metrics.cardRadius),
                                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)),
@@ -359,9 +372,9 @@ fun InscritoView(
         }
     }
 
-    if (mostrarModal) {
+    if (mostrarModalValue) {
         ModalBottomSheet(
-            onDismissRequest = { view.onMostrarModal(false) },
+            onDismissRequest = { onMostrarModal(false) },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onBackground
         ) {
@@ -378,24 +391,24 @@ fun InscritoView(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 AppTextField(
-                    value = carnet,
-                    onValueChange = view::onCarnetChange,
+                    value = carnetValue,
+                    onValueChange = onCarnetChange,
                     label = "Carnet",
                     leadingIcon = Icons.Filled.Badge,
                     keyboardType = KeyboardType.Number,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
-                    value = nombre,
-                    onValueChange = view::onNombreChange,
+                    value = nombreValue,
+                    onValueChange = onNombreChange,
                     label = "Nombre",
                     leadingIcon = Icons.Filled.Person,
                     keyboardType = KeyboardType.Text,
                     modifier = Modifier.fillMaxWidth()
                 )
                 AppTextField(
-                    value = apellido,
-                    onValueChange = view::onApellidoChange,
+                    value = apellidoValue,
+                    onValueChange = onApellidoChange,
                     label = "Apellido",
                     leadingIcon = Icons.Filled.Person,
                     keyboardType = KeyboardType.Text,
@@ -404,7 +417,7 @@ fun InscritoView(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     AppSecondaryButton(
                         text = "Cancelar",
-                        onClick = { view.onMostrarModal(false) },
+                        onClick = { onMostrarModal(false) },
                         modifier = Modifier.weight(1f)
                     )
                     AppPrimaryButton(
@@ -412,8 +425,8 @@ fun InscritoView(
                         onClick = {
                             val agregado = onAgregar()
                             if (agregado) {
-                                view.limpiarFormulario()
-                                view.onMostrarModal(false)
+                                limpiarFormulario()
+                                onMostrarModal(false)
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar("Estudiante agregado correctamente")
                                 }
@@ -431,11 +444,11 @@ fun InscritoView(
         }
     }
 
-    if (mostrarEliminarModal && estudianteSeleccionado != null) {
+    if (mostrarEliminarModalValue && estudianteSeleccionadoValue != null) {
         ModalBottomSheet(
             onDismissRequest = {
-                view.onMostrarEliminarModal(false)
-                view.onEstudianteSeleccionado(null)
+                onMostrarEliminarModal(false)
+                onEstudianteSeleccionado(null)
             },
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
             contentColor = MaterialTheme.colorScheme.onBackground,
@@ -448,7 +461,7 @@ fun InscritoView(
             ) {
                 Text("Eliminar inscripción", style = MaterialTheme.typography.titleLarge)
                 Text(
-                    text = "¿Realmente quieres eliminar a ${estudianteSeleccionado?.nombre} ${estudianteSeleccionado?.apellido}?",
+                    text = "¿Realmente quieres eliminar a ${estudianteSeleccionadoValue?.nombre} ${estudianteSeleccionadoValue?.apellido}?",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -459,8 +472,8 @@ fun InscritoView(
                     AppSecondaryButton(
                         text = "Cancelar",
                         onClick = {
-                            view.onMostrarEliminarModal(false)
-                            view.onEstudianteSeleccionado(null)
+                            onMostrarEliminarModal(false)
+                            onEstudianteSeleccionado(null)
                         },
                         modifier = Modifier.weight(1f),
                     )
@@ -469,8 +482,8 @@ fun InscritoView(
                         onClick = {
                             val eliminado = onEliminar()
                             if (eliminado) {
-                                view.onMostrarEliminarModal(false)
-                                view.onEstudianteSeleccionado(null)
+                                onMostrarEliminarModal(false)
+                                onEstudianteSeleccionado(null)
                                 coroutineScope.launch {
                                     snackbarHostState.showSnackbar("Inscripción eliminada")
                                 }
