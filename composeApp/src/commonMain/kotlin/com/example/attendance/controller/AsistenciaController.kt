@@ -5,14 +5,14 @@ import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.util.QrUtils
-import com.example.attendance.view.IAsistenciaView
+import com.example.attendance.view.AsistenciaView
 
 class AsistenciaController(
     private val asistenciaModel: AsistenciaModel,
     private val docenteModel: DocenteModel,
     private val inscritoModel: InscritoModel,
     private val materiaModel: MateriaModel,
-    private val view: IAsistenciaView,
+    private val view: AsistenciaView,
 ) {
     fun iniciar(materiaId: Long) {
         asistenciaModel.cargarAsistenciasMateria(materiaId)

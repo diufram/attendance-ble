@@ -154,7 +154,7 @@ fun App(db: Database) {
         NavHost(navController = navController, startDestination = AppRoutes.LOGIN) {
 
             composable(AppRoutes.LOGIN) {
-                LoginView(
+                LoginViewi(
                     carnet = loginView.carnet,
                     error = loginView.error,
                     submitting = loginView.submitting,
@@ -162,10 +162,10 @@ fun App(db: Database) {
                     setError = loginView::setError,
                     setSubmitting = loginView::setSubmitting,
                     onLogin = {
-                        val resultado = authController.onLogin() ?: return@LoginView
+                        val resultado = authController.onLogin() ?: return@LoginViewi
                         val partes = resultado.split(":")
                         val destino = partes.getOrNull(0)
-                        val carnet = partes.getOrNull(1)?.toLongOrNull() ?: return@LoginView
+                        val carnet = partes.getOrNull(1)?.toLongOrNull() ?: return@LoginViewi
                         when (destino) {
                             "DOCENTE" -> appNavigation.irMateriaDocenteView(carnet)
                             "ESTUDIANTE" -> appNavigation.irMateriaEstudianteView(carnet)
@@ -176,7 +176,7 @@ fun App(db: Database) {
             }
 
             composable("registro") {
-                RegistroView(
+                RegistroViewi(
                     nombre = registroView.nombre,
                     apellido = registroView.apellido,
                     carnet = registroView.carnet,
@@ -190,10 +190,10 @@ fun App(db: Database) {
                     setError = registroView::setError,
                     setSubmitting = registroView::setSubmitting,
                     onRegistrar = {
-                        val resultado = authController.onRegistrar() ?: return@RegistroView
+                        val resultado = authController.onRegistrar() ?: return@RegistroViewi
                         val partes = resultado.split(":")
                         val destino = partes.getOrNull(0)
-                        val carnet = partes.getOrNull(1)?.toLongOrNull() ?: return@RegistroView
+                        val carnet = partes.getOrNull(1)?.toLongOrNull() ?: return@RegistroViewi
                         when (destino) {
                             "DOCENTE" -> appNavigation.irMateriaDocenteView(carnet)
                             "ESTUDIANTE" -> appNavigation.irMateriaEstudianteView(carnet)
@@ -214,7 +214,7 @@ fun App(db: Database) {
                     docenteController.iniciar(carnet)
                 }
 
-                MateriaDocenteView(
+                MateriaDocenteViewi(
                     materias = materiaDocenteView.materias,
                     sigla = materiaDocenteView.sigla,
                     nombre = materiaDocenteView.nombre,
@@ -265,7 +265,7 @@ fun App(db: Database) {
                     asistenciaController.iniciar(materiaId)
                 }
 
-                AsistenciaView(
+                AsistenciaViewi(
                     asistencias = asistenciaView.asistencias,
                     mostrarQr = asistenciaView.mostrarQr,
                     qrMatriz = asistenciaView.qrMatriz,
@@ -303,7 +303,7 @@ fun App(db: Database) {
                     inscritosController.iniciar(materiaId)
                 }
 
-                InscritoView(
+                InscritoViewi(
                     inscritos = inscritoView.inscritos,
                     mostrarModal = inscritoView.mostrarModal,
                     mostrarEliminarModal = inscritoView.mostrarEliminarModal,
@@ -352,7 +352,7 @@ fun App(db: Database) {
                     }
                 }
 
-                AsistenciaDetalleView(
+                AsistenciaDetalleViewi(
                     detalles = asistenciaDetalleView.detalles,
                     bleActivo = asistenciaDetalleView.bleActivo,
                     bleEstado = asistenciaDetalleView.bleEstado,
@@ -394,7 +394,7 @@ fun App(db: Database) {
                     }
                 }
 
-                MateriaEstudianteView(
+                MateriaEstudianteViewi(
                     materias = materiaEstudianteView.materias,
                     mostrarEscaner = materiaEstudianteView.mostrarEscaner,
                     mostrarMateriaSheet = materiaEstudianteView.mostrarMateriaSheet,

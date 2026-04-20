@@ -2,14 +2,14 @@ package com.example.attendance.controller
 
 import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.EstudianteModel
-import com.example.attendance.view.ILoginView
-import com.example.attendance.view.IRegistroView
+import com.example.attendance.view.LoginView
+import com.example.attendance.view.RegistroView
 
 class AuthController(
     private val docenteModel: DocenteModel,
     private val estudianteModel: EstudianteModel,
-    private val loginView: ILoginView,
-    private val registroView: IRegistroView,
+    private val loginView: LoginView,
+    private val registroView: RegistroView,
 ) {
     fun onLogin(): String? {
         loginView.setSubmitting(true)

@@ -43,7 +43,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import qrcode.QRCode
 
-interface IAsistenciaView {
+interface AsistenciaView {
     val asistencias: StateFlow<List<AsistenciaModel>>
     val mostrarQr: StateFlow<Boolean>
     val qrMatriz: StateFlow<List<List<Boolean>>>
@@ -57,7 +57,7 @@ interface IAsistenciaView {
     fun onAsistenciaAEliminar(asistencia: AsistenciaModel?)
 }
 
-class AsistenciaViewData : IAsistenciaView {
+class AsistenciaViewData : AsistenciaView {
     private val _asistencias = MutableStateFlow<List<AsistenciaModel>>(emptyList())
     override val asistencias: StateFlow<List<AsistenciaModel>> = _asistencias.asStateFlow()
 
@@ -96,7 +96,7 @@ class AsistenciaViewData : IAsistenciaView {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AsistenciaView(
+fun AsistenciaViewi(
     materiaId: Long,
     materiaNombre: String,
     materiaQrDetalle: String,

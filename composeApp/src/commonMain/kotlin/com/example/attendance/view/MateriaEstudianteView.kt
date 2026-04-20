@@ -45,7 +45,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-interface IMateriaEstudianteView {
+interface MateriaEstudianteView {
     val materias: StateFlow<List<MateriaModel>>
     val mostrarEscaner: StateFlow<Boolean>
     val mostrarMateriaSheet: StateFlow<Boolean>
@@ -59,7 +59,7 @@ interface IMateriaEstudianteView {
     fun onMostrarMateriaSheet(valor: Boolean)
 }
 
-class MateriaEstudianteViewData : IMateriaEstudianteView {
+class MateriaEstudianteViewData : MateriaEstudianteView {
     private var _materias: StateFlow<List<MateriaModel>> = MutableStateFlow(emptyList())
     override val materias: StateFlow<List<MateriaModel>> get() = _materias
 
@@ -98,7 +98,7 @@ class MateriaEstudianteViewData : IMateriaEstudianteView {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MateriaEstudianteView(
+fun MateriaEstudianteViewi(
     bleEstado: String,
     bleActivoMateriaId: Long?,
     bleConfirmacion: BleConfirmacion?,

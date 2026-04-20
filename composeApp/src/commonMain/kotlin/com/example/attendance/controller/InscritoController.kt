@@ -2,12 +2,12 @@ package com.example.attendance.controller
 
 import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.InscritoModel
-import com.example.attendance.view.IInscritoView
+import com.example.attendance.view.InscritoView
 
 class InscritoController(
     private val estudianteModel: EstudianteModel,
     private val inscritoModel: InscritoModel,
-    private val view: IInscritoView,
+    private val view: InscritoView,
 ) {
     fun iniciar(materiaId: Long) {
         inscritoModel.cargarInscritosMateria(materiaId)

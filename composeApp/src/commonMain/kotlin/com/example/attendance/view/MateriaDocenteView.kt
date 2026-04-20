@@ -39,7 +39,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-interface IMateriaDocenteView {
+interface MateriaDocenteView {
     val materias: StateFlow<List<MateriaModel>>
     val sigla: StateFlow<String>
     val nombre: StateFlow<String>
@@ -66,7 +66,7 @@ interface IMateriaDocenteView {
     fun limpiarFormulario()
 }
 
-class MateriaDocenteViewData : IMateriaDocenteView {
+class MateriaDocenteViewData : MateriaDocenteView {
     private var _materias: StateFlow<List<MateriaModel>> = MutableStateFlow(emptyList())
     override val materias: StateFlow<List<MateriaModel>> get() = _materias
 
@@ -171,7 +171,7 @@ class MateriaDocenteViewData : IMateriaDocenteView {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MateriaDocenteView(
+fun MateriaDocenteViewi(
     materias: StateFlow<List<MateriaModel>>,
     sigla: StateFlow<String>,
     nombre: StateFlow<String>,

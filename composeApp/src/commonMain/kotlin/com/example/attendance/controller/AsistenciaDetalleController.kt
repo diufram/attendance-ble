@@ -5,18 +5,17 @@ import com.example.attendance.model.AsistenciaDetalleModel
 import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.MateriaModel
-import com.example.attendance.view.IAsistenciaDetalleView
+import com.example.attendance.view.AsistenciaDetalleView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class AsistenciaDetalleController(
     private val asistenciaModel: AsistenciaModel,
     private val asistenciaDetalleModel: AsistenciaDetalleModel,
     private val estudianteModel: EstudianteModel,
-    private val view: IAsistenciaDetalleView,
+    private val view: AsistenciaDetalleView,
 ) {
     private val bleService = BleTeacherService()
     private val scope = CoroutineScope(Dispatchers.Default)

@@ -6,7 +6,7 @@ import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.util.QrUtils
-import com.example.attendance.view.IMateriaEstudianteView
+import com.example.attendance.view.MateriaEstudianteView
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -14,7 +14,7 @@ class MateriaEstudianteController(
     private val materiaModel: MateriaModel,
     private val docenteModel: DocenteModel,
     private val inscritoModel: InscritoModel,
-    private val view: IMateriaEstudianteView,
+    private val view: MateriaEstudianteView,
 ) {
     private val bleService = BleStudentService()
 

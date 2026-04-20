@@ -1,11 +1,11 @@
 package com.example.attendance.controller
 
 import com.example.attendance.model.MateriaModel
-import com.example.attendance.view.IMateriaDocenteView
+import com.example.attendance.view.MateriaDocenteView
 
 class MateriaDocenteController(
     private val materiaModel: MateriaModel,
-    private val view: IMateriaDocenteView,
+    private val view: MateriaDocenteView,
 ) {
 
     fun iniciar(carnet: Long) {

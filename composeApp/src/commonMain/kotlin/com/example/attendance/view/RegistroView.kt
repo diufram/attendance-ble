@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-interface IRegistroView {
+interface RegistroView {
     val nombre: StateFlow<String>
     val apellido: StateFlow<String>
     val carnet: StateFlow<String>
@@ -45,7 +45,7 @@ interface IRegistroView {
     fun setSubmitting(valor: Boolean)
 }
 
-class RegistroViewData : IRegistroView {
+class RegistroViewData : RegistroView {
     private val _nombre = MutableStateFlow("")
     override val nombre: StateFlow<String> = _nombre.asStateFlow()
 
@@ -94,7 +94,7 @@ class RegistroViewData : IRegistroView {
 }
 
 @Composable
-fun RegistroView(
+fun RegistroViewi(
     nombre: StateFlow<String>,
     apellido: StateFlow<String>,
     carnet: StateFlow<String>,

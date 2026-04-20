@@ -58,7 +58,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-interface IAsistenciaDetalleView {
+interface AsistenciaDetalleView {
     val detalles: StateFlow<List<AsistenciaDetalleModel>>
     val bleActivo: StateFlow<Boolean>
     val bleEstado: StateFlow<String>
@@ -68,7 +68,7 @@ interface IAsistenciaDetalleView {
     fun onBleEstado(valor: String)
 }
 
-class AsistenciaDetalleViewData : IAsistenciaDetalleView {
+class AsistenciaDetalleViewData : AsistenciaDetalleView {
     private val _detalles = MutableStateFlow<List<AsistenciaDetalleModel>>(emptyList())
     override val detalles: StateFlow<List<AsistenciaDetalleModel>> = _detalles.asStateFlow()
 
@@ -93,7 +93,7 @@ class AsistenciaDetalleViewData : IAsistenciaDetalleView {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AsistenciaDetalleView(
+fun AsistenciaDetalleViewi(
     materiaSigla: String,
     materiaGrupo: String,
     detalles: StateFlow<List<AsistenciaDetalleModel>>,

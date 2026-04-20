@@ -55,7 +55,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.attendance.model.EstudianteModel
-import com.example.attendance.model.InscritoModel
 import com.example.attendance.view.theme.AppPrimaryButton
 import com.example.attendance.view.theme.AppSecondaryButton
 import com.example.attendance.view.theme.AppTextField
@@ -65,7 +64,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-interface IInscritoView {
+interface InscritoView {
     val inscritos: StateFlow<List<EstudianteModel>>
     val mostrarModal: StateFlow<Boolean>
     val mostrarEliminarModal: StateFlow<Boolean>
@@ -84,7 +83,7 @@ interface IInscritoView {
     fun limpiarFormulario()
 }
 
-class InscritoViewData : IInscritoView {
+class InscritoViewData : InscritoView {
     private var _inscritos: StateFlow<List<EstudianteModel>> = MutableStateFlow(emptyList())
     override val inscritos: StateFlow<List<EstudianteModel>> get() = _inscritos
 
@@ -143,7 +142,7 @@ class InscritoViewData : IInscritoView {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun InscritoView(
+fun InscritoViewi(
     materiaNombre: String,
     inscritos: StateFlow<List<EstudianteModel>>,
     mostrarModal: StateFlow<Boolean>,

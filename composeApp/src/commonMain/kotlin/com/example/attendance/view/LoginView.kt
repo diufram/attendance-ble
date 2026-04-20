@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-interface ILoginView {
+interface LoginView {
     val carnet: StateFlow<String>
     val error: StateFlow<String>
     val submitting: StateFlow<Boolean>
@@ -37,7 +37,7 @@ interface ILoginView {
     fun setSubmitting(valor: Boolean)
 }
 
-class LoginViewData : ILoginView {
+class LoginViewData : LoginView {
     private val _carnet = MutableStateFlow("")
     override val carnet: StateFlow<String> = _carnet.asStateFlow()
 
@@ -62,7 +62,7 @@ class LoginViewData : ILoginView {
 }
 
 @Composable
-fun LoginView(
+fun LoginViewi(
     carnet: StateFlow<String>,
     error: StateFlow<String>,
     submitting: StateFlow<Boolean>,
