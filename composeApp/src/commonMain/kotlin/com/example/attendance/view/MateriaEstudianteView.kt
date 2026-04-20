@@ -22,8 +22,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -126,16 +128,18 @@ fun MateriaEstudianteView(
     val sizes = AttendanceThemeTokens.textSizes
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
+    var materiaPendientePermiso by remember { mutableStateOf<MateriaModel?>(null) }
 
     val solicitarPermisosBle = rememberRequestBlePermissions(
         onGranted = {
-            val materia = materiaPendienteValue ?: return@rememberRequestBlePermissions
+            val materia = materiaPendientePermiso ?: materiaPendienteValue ?: return@rememberRequestBlePermissions
             val error = onMarcarAsistencia(materia)
             if (error != null) {
                 coroutineScope.launch { snackbarHostState.showSnackbar(error) }
             }
         },
         onDenied = { mensaje ->
+            materiaPendientePermiso = null
             coroutineScope.launch { snackbarHostState.showSnackbar(mensaje) }
         }
     )
@@ -390,8 +394,10 @@ fun MateriaEstudianteView(
                                             IconButton(
                                                 onClick = {
                                                     if (confirmado) {
+                                                        materiaPendientePermiso = null
                                                         onCerrarConfirmacionAsistencia()
                                                     } else {
+                                                        materiaPendientePermiso = null
                                                         onMateriaPendiente(null)
                                                         onDetenerMarcadoAsistencia()
                                                     }
@@ -574,6 +580,7 @@ fun MateriaEstudianteView(
                         text = "Marcar",
                         onClick = {
                             if (materiaActiva == null) return@AppPrimaryButton
+                            materiaPendientePermiso = materiaActiva
                             onMateriaPendiente(materiaActiva)
                             solicitarPermisosBle()
                             onMostrarMateriaSheet(false)

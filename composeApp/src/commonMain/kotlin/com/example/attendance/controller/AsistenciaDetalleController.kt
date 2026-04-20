@@ -6,8 +6,11 @@ import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.IAsistenciaDetalleView
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 class AsistenciaDetalleController(
     private val asistenciaModel: AsistenciaModel,
@@ -16,6 +19,20 @@ class AsistenciaDetalleController(
     private val view: IAsistenciaDetalleView,
 ) {
     private val bleService = BleTeacherService()
+    private val scope = CoroutineScope(Dispatchers.Default)
+
+    init {
+        scope.launch {
+            bleService.bleActivo.collect { activo ->
+                view.onBleActivo(activo)
+            }
+        }
+        scope.launch {
+            bleService.bleEstado.collect { estado ->
+                view.onBleEstado(estado)
+            }
+        }
+    }
 
     fun iniciar(asistenciaId: Long, esNueva: Boolean, materiaId: Long) {
         if (esNueva) {
@@ -109,7 +126,7 @@ class AsistenciaDetalleController(
             idx to (detalle.estado == "PRESENTE")
         }
 
-        return bleService.iniciarBleDocente(
+        val error = bleService.iniciarBleDocente(
             sigla = materia.sigla,
             grupo = materia.grupo,
             totalEstudiantes = detalles.size,
@@ -131,6 +148,11 @@ class AsistenciaDetalleController(
                 }
             },
         )
+        if (error != null) {
+            view.onBleActivo(false)
+            view.onBleEstado(error)
+        }
+        return error
     }
 
     fun detenerEscaneo() {
