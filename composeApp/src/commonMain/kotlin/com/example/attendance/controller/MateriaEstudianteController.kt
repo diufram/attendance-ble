@@ -7,6 +7,7 @@ import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.util.QrUtils
 import com.example.attendance.view.IMateriaEstudianteView
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class MateriaEstudianteController(
@@ -23,7 +24,7 @@ class MateriaEstudianteController(
 
     fun iniciar(carnet: Long) {
         materiaModel.cargarMaterias(carnet, esDocente = false)
-        view.setMaterias(materiaModel.materiasUsuario.value)
+        view.setMaterias(materiaModel.materiasUsuario)
     }
 
     fun marcarAsistencia(materia: MateriaModel): String? {
@@ -88,7 +89,6 @@ class MateriaEstudianteController(
                 )
             )
             materiaModel.cargarMaterias(carnet, esDocente = false)
-            view.setMaterias(materiaModel.materiasUsuario.value)
             null
         } catch (_: Throwable) {
             "No se pudo guardar la inscripcion desde el QR"
@@ -97,6 +97,6 @@ class MateriaEstudianteController(
     fun cerrarSesion() {
         detenerMarcadoAsistencia()
         materiaModel.limpiarMaterias()
-        view.setMaterias(emptyList())
+        view.setMaterias(MutableStateFlow(emptyList()))
     }
 }

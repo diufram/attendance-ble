@@ -50,7 +50,7 @@ interface IMateriaEstudianteView {
     val materiaSeleccionada: StateFlow<MateriaModel?>
     val materiaPendiente: StateFlow<MateriaModel?>
 
-    fun setMaterias(materias: List<MateriaModel>)
+    fun setMaterias(materias: StateFlow<List<MateriaModel>>)
     fun onMostrarEscaner(valor: Boolean)
     fun onMateriaSeleccionada(materia: MateriaModel?)
     fun onMateriaPendiente(materia: MateriaModel?)
@@ -58,8 +58,8 @@ interface IMateriaEstudianteView {
 }
 
 class MateriaEstudianteViewData : IMateriaEstudianteView {
-    private val _materias = MutableStateFlow<List<MateriaModel>>(emptyList())
-    override val materias: StateFlow<List<MateriaModel>> = _materias.asStateFlow()
+    private var _materias: StateFlow<List<MateriaModel>> = MutableStateFlow(emptyList())
+    override val materias: StateFlow<List<MateriaModel>> get() = _materias
 
     private val _mostrarEscaner = MutableStateFlow(false)
     override val mostrarEscaner: StateFlow<Boolean> = _mostrarEscaner.asStateFlow()
@@ -73,8 +73,8 @@ class MateriaEstudianteViewData : IMateriaEstudianteView {
     private val _materiaPendiente = MutableStateFlow<MateriaModel?>(null)
     override val materiaPendiente: StateFlow<MateriaModel?> = _materiaPendiente.asStateFlow()
 
-    override fun setMaterias(materias: List<MateriaModel>) {
-        _materias.value = materias
+    override fun setMaterias(materias: StateFlow<List<MateriaModel>>) {
+        _materias = materias
     }
 
     override fun onMostrarEscaner(valor: Boolean) {
@@ -114,7 +114,7 @@ fun MateriaEstudianteView(
     onMateriaSeleccionada: (MateriaModel?) -> Unit,
     onMateriaPendiente: (MateriaModel?) -> Unit,
     onMostrarMateriaSheet: (Boolean) -> Unit,
-    setMaterias: (List<MateriaModel>) -> Unit
+    setMaterias: (StateFlow<List<MateriaModel>>) -> Unit
 ) {
     val materiasValue by materias.collectAsState()
     val mostrarEscanerValue by mostrarEscaner.collectAsState()

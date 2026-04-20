@@ -11,7 +11,7 @@ class InscritoController(
 ) {
     fun iniciar(materiaId: Long) {
         inscritoModel.cargarInscritosMateria(materiaId)
-        view.setInscritos(inscritoModel.inscritosMateria.value)
+        view.setInscritos(inscritoModel.inscritosMateria)
     }
 
     fun agregar(materiaId: Long): Boolean {
@@ -53,7 +53,6 @@ class InscritoController(
                 )
             )
             inscritoModel.cargarInscritosMateria(materiaId)
-            view.setInscritos(inscritoModel.inscritosMateria.value)
             return true
         } catch (_: Exception) {
             return false
@@ -70,7 +69,6 @@ class InscritoController(
                 )
             )
             inscritoModel.cargarInscritosMateria(materiaId)
-            view.setInscritos(inscritoModel.inscritosMateria.value)
             true
         } catch (_: Exception) {
             false

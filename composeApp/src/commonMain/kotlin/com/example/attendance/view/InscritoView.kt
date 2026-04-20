@@ -73,7 +73,7 @@ interface IInscritoView {
     val nombre: StateFlow<String>
     val apellido: StateFlow<String>
 
-    fun setInscritos(inscritos: List<EstudianteModel>)
+    fun setInscritos(inscritos: StateFlow<List<EstudianteModel>>)
     fun onMostrarModal(valor: Boolean)
     fun onMostrarEliminarModal(valor: Boolean)
     fun onEstudianteSeleccionado(estudiante: EstudianteModel?)
@@ -84,8 +84,8 @@ interface IInscritoView {
 }
 
 class InscritoViewData : IInscritoView {
-    private val _inscritos = MutableStateFlow<List<EstudianteModel>>(emptyList())
-    override val inscritos: StateFlow<List<EstudianteModel>> = _inscritos.asStateFlow()
+    private var _inscritos: StateFlow<List<EstudianteModel>> = MutableStateFlow(emptyList())
+    override val inscritos: StateFlow<List<EstudianteModel>> get() = _inscritos
 
     private val _mostrarModal = MutableStateFlow(false)
     override val mostrarModal: StateFlow<Boolean> = _mostrarModal.asStateFlow()
@@ -105,8 +105,8 @@ class InscritoViewData : IInscritoView {
     private val _apellido = MutableStateFlow("")
     override val apellido: StateFlow<String> = _apellido.asStateFlow()
 
-    override fun setInscritos(inscritos: List<EstudianteModel>) {
-        _inscritos.value = inscritos
+    override fun setInscritos(inscritos: StateFlow<List<EstudianteModel>>) {
+        _inscritos = inscritos
     }
 
     override fun onMostrarModal(valor: Boolean) {

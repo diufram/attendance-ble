@@ -6,6 +6,7 @@ import com.example.attendance.model.AsistenciaModel
 import com.example.attendance.model.EstudianteModel
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.view.IAsistenciaDetalleView
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class AsistenciaDetalleController(
@@ -18,7 +19,6 @@ class AsistenciaDetalleController(
 
     fun iniciar(asistenciaId: Long, esNueva: Boolean, materiaId: Long) {
         if (esNueva) {
-            // Cargar estudiantes inscritos para nueva asistencia
             val alumnos = estudianteModel.obtenerPorMateria(materiaId)
             val detallesTemporales = alumnos.mapIndexed { index, alumno ->
                 AsistenciaDetalleModel(
@@ -31,10 +31,10 @@ class AsistenciaDetalleController(
                     bitmapIndexEstudiante = index,
                 )
             }
-            view.setDetalles(detallesTemporales)
+            view.setDetalles(MutableStateFlow(detallesTemporales))
         } else {
             asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
-            view.setDetalles(asistenciaDetalleModel.detallesAsistencia.value)
+            view.setDetalles(asistenciaDetalleModel.detallesAsistencia)
         }
     }
 
@@ -67,7 +67,7 @@ class AsistenciaDetalleController(
                 asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
             }
 
-            view.setDetalles(asistenciaDetalleModel.detallesAsistencia.value)
+            //view.setDetalles(asistenciaDetalleModel.detallesAsistencia)
             asistenciaModel.cargarAsistenciasMateria(materiaId)
             true
         } catch (_: Exception) {
@@ -86,7 +86,7 @@ class AsistenciaDetalleController(
                 detalle
             }
         }
-        view.setDetalles(detallesActualizados)
+        view.setDetalles(MutableStateFlow(detallesActualizados))
 
         val detalle = detallesActuales.firstOrNull { it.carnetIdentidad == detalleSeleccionado.carnetIdentidad }
         val bitmapIndex = detalle?.bitmapIndexEstudiante
@@ -122,7 +122,7 @@ class AsistenciaDetalleController(
                             item
                         }
                     }
-                    view.setDetalles(actualizados)
+                    view.setDetalles(MutableStateFlow(actualizados))
                 }
             },
         )

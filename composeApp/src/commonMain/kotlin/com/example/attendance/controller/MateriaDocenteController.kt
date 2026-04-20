@@ -10,7 +10,7 @@ class MateriaDocenteController(
 
     fun iniciar(carnet: Long) {
         materiaModel.cargarMaterias(carnet, esDocente = true)
-        view.setMaterias(materiaModel.materiasUsuario.value)
+        view.setMaterias(materiaModel.materiasUsuario)
     }
 
     fun crear() {
@@ -35,7 +35,6 @@ class MateriaDocenteController(
         }
 
         materiaModel.cargarMaterias(carnet, esDocente = true)
-        view.setMaterias(materiaModel.materiasUsuario.value)
         view.onCerrarModalCrear()
     }
 
@@ -63,7 +62,6 @@ class MateriaDocenteController(
         }
 
         materiaModel.cargarMaterias(carnet, esDocente = true)
-        view.setMaterias(materiaModel.materiasUsuario.value)
         view.onCerrarModalEditar()
     }
 
@@ -81,7 +79,6 @@ class MateriaDocenteController(
         }
 
         materiaModel.cargarMaterias(carnet, esDocente = true)
-        view.setMaterias(materiaModel.materiasUsuario.value)
         view.onCerrarModalEliminar()
     }
     fun cerrarSesion() {

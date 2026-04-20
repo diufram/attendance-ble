@@ -63,14 +63,14 @@ interface IAsistenciaDetalleView {
     val bleActivo: StateFlow<Boolean>
     val bleEstado: StateFlow<String>
 
-    fun setDetalles(detalles: List<AsistenciaDetalleModel>)
+    fun setDetalles(detalles: StateFlow<List<AsistenciaDetalleModel>>)
     fun onBleActivo(valor: Boolean)
     fun onBleEstado(valor: String)
 }
 
 class AsistenciaDetalleViewData : IAsistenciaDetalleView {
-    private val _detalles = MutableStateFlow<List<AsistenciaDetalleModel>>(emptyList())
-    override val detalles: StateFlow<List<AsistenciaDetalleModel>> = _detalles.asStateFlow()
+    private var _detalles: StateFlow<List<AsistenciaDetalleModel>> = MutableStateFlow(emptyList())
+    override val detalles: StateFlow<List<AsistenciaDetalleModel>> get() = _detalles
 
     private val _bleActivo = MutableStateFlow(false)
     override val bleActivo: StateFlow<Boolean> = _bleActivo.asStateFlow()
@@ -78,8 +78,8 @@ class AsistenciaDetalleViewData : IAsistenciaDetalleView {
     private val _bleEstado = MutableStateFlow("BLE inactivo")
     override val bleEstado: StateFlow<String> = _bleEstado.asStateFlow()
 
-    override fun setDetalles(detalles: List<AsistenciaDetalleModel>) {
-        _detalles.value = detalles
+    override fun setDetalles(detalles: StateFlow<List<AsistenciaDetalleModel>>) {
+        _detalles = detalles
     }
 
     override fun onBleActivo(valor: Boolean) {

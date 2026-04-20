@@ -50,7 +50,7 @@ interface IMateriaDocenteView {
     val materiaSeleccionadaAccion: StateFlow<MateriaModel?>
     val errorMensaje: StateFlow<String?>
 
-    fun setMaterias(materias: List<MateriaModel>)
+    fun setMaterias(materias: StateFlow<List<MateriaModel>>)
     fun onSiglaChange(valor: String)
     fun onNombreChange(valor: String)
     fun onGrupoChange(valor: String)
@@ -67,8 +67,8 @@ interface IMateriaDocenteView {
 }
 
 class MateriaDocenteViewData : IMateriaDocenteView {
-    private val _materias = MutableStateFlow<List<MateriaModel>>(emptyList())
-    override val materias: StateFlow<List<MateriaModel>> = _materias.asStateFlow()
+    private var _materias: StateFlow<List<MateriaModel>> = MutableStateFlow(emptyList())
+    override val materias: StateFlow<List<MateriaModel>> get() = _materias
 
     private val _sigla = MutableStateFlow("")
     override val sigla: StateFlow<String> = _sigla.asStateFlow()
@@ -94,8 +94,8 @@ class MateriaDocenteViewData : IMateriaDocenteView {
     private val _errorMensaje = MutableStateFlow<String?>(null)
     override val errorMensaje: StateFlow<String?> = _errorMensaje.asStateFlow()
 
-    override fun setMaterias(materias: List<MateriaModel>) {
-        _materias.value = materias
+    override fun setMaterias(materias: StateFlow<List<MateriaModel>>) {
+        _materias = materias
     }
 
     override fun onSiglaChange(valor: String) {
@@ -186,7 +186,7 @@ fun MateriaDocenteView(
     onCrear: () -> Unit,
     onGuardar: () -> Unit,
     onEliminar: () -> Unit,
-    setMaterias: (List<MateriaModel>) -> Unit,
+    setMaterias: (StateFlow<List<MateriaModel>>) -> Unit,
     onSiglaChange: (String) -> Unit,
     onNombreChange: (String) -> Unit,
     onGrupoChange: (String) -> Unit,

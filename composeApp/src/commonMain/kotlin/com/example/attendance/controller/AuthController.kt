@@ -94,6 +94,22 @@ class AuthController(
             registroView.setError("")
             return "DOCENTE:$carnet"
         } else {
+            estudianteModel.obtenerPorCarnet(carnet) ?: run {
+                estudianteModel.crear(
+                    EstudianteModel(
+                        carnetIdentidad = carnet,
+                        nombre = nombre.trim(),
+                        apellido = apellido.trim()
+                    )
+                )
+                estudianteModel.obtenerPorCarnet(carnet)
+                    ?: run {
+                        registroView.setError("No se pudo registrar el estudiante")
+                        registroView.setSubmitting(false)
+                        return null
+                    }
+            }
+
             registroView.setError("")
             return "ESTUDIANTE:$carnet"
         }
