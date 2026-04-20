@@ -332,11 +332,11 @@ fun App(db: Database) {
                     navArgument("asistenciaId") { type = NavType.StringType }
                 )
             ) { backStackEntry ->
-                val materiaId = extraerLongArg(backStackEntry, "materiaId")
-                    ?: appNavigation.ultimoMateriaId
+                val materiaId = appNavigation.ultimoMateriaId
+                    ?: extraerLongArg(backStackEntry, "materiaId")
                     ?: return@composable
-                val asistenciaId = extraerLongArg(backStackEntry, "asistenciaId")
-                    ?: appNavigation.ultimoAsistenciaId
+                val asistenciaId = appNavigation.ultimoAsistenciaId
+                    ?: extraerLongArg(backStackEntry, "asistenciaId")
                     ?: return@composable
                 val esNueva = asistenciaId == -1L
 

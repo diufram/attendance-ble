@@ -42,32 +42,37 @@ class AsistenciaDetalleController(
         return try {
             val detallesActuales = view.detalles.value
 
-            if (esNueva) {
-                val nuevaAsistenciaId = asistenciaModel.guardar(
-                    AsistenciaModel(materiaId = materiaId)
-                )
-                detallesActuales.forEach { detalle ->
-                    asistenciaDetalleModel.crear(
-                        AsistenciaDetalleModel(
-                            asistenciaId = nuevaAsistenciaId,
+            val database = asistenciaModel.db ?: return false
+            var asistenciaObjetivoId = asistenciaId
+
+            database.transaction {
+                if (esNueva) {
+                    asistenciaObjetivoId = asistenciaModel.guardar(
+                        AsistenciaModel(materiaId = materiaId)
+                    )
+                    detallesActuales.forEach { detalle ->
+                        asistenciaDetalleModel.crear(
+                            AsistenciaDetalleModel(
+                                asistenciaId = asistenciaObjetivoId,
+                                carnetIdentidad = detalle.carnetIdentidad,
+                                estado = detalle.estado,
+                            )
+                        )
+                    }
+                } else {
+                    detallesActuales.forEach { detalle ->
+                        asistenciaDetalleModel.actualizarEstado(
+                            asistenciaId = asistenciaObjetivoId,
                             carnetIdentidad = detalle.carnetIdentidad,
                             estado = detalle.estado,
                         )
-                    )
+                    }
                 }
-                asistenciaDetalleModel.cargarDetallesAsistencia(nuevaAsistenciaId)
-            } else {
-                detallesActuales.forEach { detalle ->
-                    asistenciaDetalleModel.actualizarEstado(
-                        asistenciaId = asistenciaId,
-                        carnetIdentidad = detalle.carnetIdentidad,
-                        estado = detalle.estado,
-                    )
-                }
-                asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaId)
             }
 
-            //view.setDetalles(asistenciaDetalleModel.detallesAsistencia)
+            asistenciaDetalleModel.cargarDetallesAsistencia(asistenciaObjetivoId)
+
+            view.setDetalles(asistenciaDetalleModel.detallesAsistencia)
             asistenciaModel.cargarAsistenciasMateria(materiaId)
             true
         } catch (_: Exception) {

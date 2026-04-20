@@ -24,10 +24,6 @@ data class AsistenciaDetalleModel(
         _detallesAsistencia.value = detalles
     }
 
-    fun cargarDetallesTemporales(estudiantes: List<AsistenciaDetalleModel>) {
-        _detallesAsistencia.value = estudiantes
-    }
-
     fun crear(detalle: AsistenciaDetalleModel) {
         val database = requireDb()
 

@@ -8,7 +8,7 @@ class AsistenciaModel(
     val id: Long = 0,
     val materiaId: Long = 0,
     val fecha: String = "",
-    private val db: Database? = null
+    internal val db: Database? = null
 ) {
     private fun requireDb(): Database = db ?: error("AsistenciaModel sin db")
     private val _asistenciasMateria = MutableStateFlow<List<AsistenciaModel>>(emptyList())
