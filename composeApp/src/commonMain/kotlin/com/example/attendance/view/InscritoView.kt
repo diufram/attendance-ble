@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Person
@@ -324,7 +325,11 @@ fun InscritoView(
                                     border = BorderStroke(metrics.thinBorder, MaterialTheme.colorScheme.outline.copy(alpha = 0.36f))
                                 ) {
                                     Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
                                             Surface(
                                                 color = MaterialTheme.colorScheme.primaryContainer,
                                                 shape = RoundedCornerShape(12.dp)
@@ -339,8 +344,21 @@ fun InscritoView(
                                             Text(
                                                 "${estudiante.nombre} ${estudiante.apellido}",
                                                 style = MaterialTheme.typography.titleSmall.copy(fontSize = sizes.cardSubtitle),
-                                                color = MaterialTheme.colorScheme.onSurface
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                modifier = Modifier.weight(1f)
                                             )
+                                            IconButton(
+                                                onClick = {
+                                                    onEstudianteSeleccionado(estudiante)
+                                                    onMostrarEliminarModal(true)
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Delete,
+                                                    contentDescription = "Eliminar estudiante",
+                                                    tint = MaterialTheme.colorScheme.error,
+                                                )
+                                            }
                                         }
 
                                         HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.22f))

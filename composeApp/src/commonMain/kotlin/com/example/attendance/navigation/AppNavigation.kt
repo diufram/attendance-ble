@@ -22,6 +22,8 @@ class AppNavigation(
     private val isNavigationLocked: () -> Boolean,
     private val lockNavigation: () -> Unit
 ) {
+    var ultimoCarnet: Long? = null
+        private set
     var ultimoMateriaId: Long? = null
         private set
     var ultimoAsistenciaId: Long? = null
@@ -40,24 +42,34 @@ class AppNavigation(
         if (isNavigationLocked()) return
         lockNavigation()
         navController.navigate(route) {
-            popUpTo(navController.graph.id) {
-                inclusive = true
-            }
             launchSingleTop = true
-            restoreState = false
         }
     }
 
     fun irMateriaDocenteView(carnet: Long) {
-        navigateAndClearStack("${AppRoutes.DOCENTE_HOME}/$carnet")
+        ultimoCarnet = carnet
+        if (isNavigationLocked()) return
+        navController.navigate("${AppRoutes.DOCENTE_HOME}/$carnet") {
+            popUpTo(AppRoutes.LOGIN) { inclusive = true }
+            launchSingleTop = true
+        }
     }
 
     fun irMateriaEstudianteView(carnet: Long) {
-        navigateAndClearStack("${AppRoutes.ESTUDIANTE_HOME}/$carnet")
+        ultimoCarnet = carnet
+        if (isNavigationLocked()) return
+        navController.navigate("${AppRoutes.ESTUDIANTE_HOME}/$carnet") {
+            popUpTo(AppRoutes.LOGIN) { inclusive = true }
+            launchSingleTop = true
+        }
     }
 
     fun irLoginView() {
-        navigateAndClearStack(AppRoutes.LOGIN)
+        if (isNavigationLocked()) return
+        navController.navigate(AppRoutes.LOGIN) {
+            popUpTo(0) { inclusive = true }
+            launchSingleTop = true
+        }
     }
 
     fun irAsistenciaView(materiaId: Long) {

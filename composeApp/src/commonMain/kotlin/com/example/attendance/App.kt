@@ -207,7 +207,9 @@ fun App(db: Database) {
                 route = AppRoutes.DOCENTE_HOME_WITH_ID,
                 arguments = listOf(navArgument("carnet") { type = NavType.StringType })
             ) { backStackEntry ->
-                val carnet = extraerLongArg(backStackEntry, "carnet") ?: return@composable
+                val carnet = extraerLongArg(backStackEntry, "carnet")
+                    ?: appNavigation.ultimoCarnet
+                    ?: return@composable
                 LaunchedEffect(carnet) {
                     docenteController.iniciar(carnet)
                 }
@@ -377,7 +379,9 @@ fun App(db: Database) {
                 route = AppRoutes.ESTUDIANTE_HOME_WITH_ID,
                 arguments = listOf(navArgument("carnet") { type = NavType.StringType })
             ) { backStackEntry ->
-                val carnet = extraerLongArg(backStackEntry, "carnet") ?: return@composable
+                val carnet = extraerLongArg(backStackEntry, "carnet")
+                    ?: appNavigation.ultimoCarnet
+                    ?: return@composable
                 val bleEstado by materiaEstudianteController.bleEstado.collectAsState()
                 val bleActivoMateriaId by materiaEstudianteController.bleActivoMateriaId.collectAsState()
                 val bleConfirmacion by materiaEstudianteController.bleConfirmacion.collectAsState()

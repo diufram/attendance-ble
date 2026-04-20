@@ -30,12 +30,14 @@ class AuthController(
         val docente = docenteModel.obtenerPorCarnet(carnet)
         if (docente != null) {
             loginView.setError("")
+            loginView.setSubmitting(false)
             return "DOCENTE:$carnet"
         }
 
         val estudiante = estudianteModel.obtenerPorCarnet(carnet)
         if (estudiante != null) {
             loginView.setError("")
+            loginView.setSubmitting(false)
             return "ESTUDIANTE:$carnet"
         }
 
