@@ -3,9 +3,9 @@ package com.example.attendance.proxy
 import com.example.attendance.model.DocenteModel
 
 class DocenteModelProxy(
-    service: DocenteSubject
+    service: DocenteModel
 ) : DocenteSubject {
-    private val realService: DocenteSubject = service
+    private val realService: DocenteModel = service
 
     override fun crear(docente: DocenteModel): Long {
         return if (checkAccess(docente.carnetIdentidad)) {

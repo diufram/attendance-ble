@@ -23,6 +23,10 @@ import com.example.attendance.model.InscritoModel
 import com.example.attendance.model.MateriaModel
 import com.example.attendance.navigation.AppNavigation
 import com.example.attendance.navigation.AppRoutes
+import com.example.attendance.proxy.DocenteModelProxy
+import com.example.attendance.proxy.DocenteSubject
+import com.example.attendance.proxy.EstudianteModelProxy
+import com.example.attendance.proxy.EstudianteSubject
 import com.example.attendance.view.*
 import com.example.attendance.view.theme.AttendanceTheme
 
@@ -142,9 +146,12 @@ fun App(db: Database) {
     }
 
     val authController = remember {
+        val docenteSubject: DocenteSubject = DocenteModelProxy(docenteModel)
+        val estudianteSubject: EstudianteSubject = EstudianteModelProxy(estudianteModel)
+
         AuthController(
-            docenteModel = docenteModel,
-            estudianteModel = estudianteModel,
+            docenteSubject = docenteSubject,
+            estudianteSubject = estudianteSubject,
             loginView = loginView,
             registroView = registroView,
         )
