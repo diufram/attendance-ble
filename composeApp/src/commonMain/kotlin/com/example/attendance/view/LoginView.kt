@@ -48,7 +48,7 @@ class LoginViewData : LoginView {
     override val submitting: StateFlow<Boolean> = _submitting.asStateFlow()
 
     override fun onCarnetChange(valor: String) {
-        _carnet.value = valor.filter(Char::isDigit)
+        _carnet.value = valor
         _error.value = ""
     }
 
@@ -188,18 +188,10 @@ fun LoginViewi(
                         label = "Carnet de Identidad",
                         leadingIcon = Icons.Filled.Badge,
                         keyboardType = KeyboardType.Number,
+                        isError = errorValue.isNotEmpty(),
+                        supportingText = errorValue.takeIf { it.isNotEmpty() },
                         modifier = Modifier.fillMaxWidth()
                     )
-
-                    if (errorValue.isNotEmpty()) {
-                        Text(
-                            text = errorValue,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
 
                     AppPrimaryButton(
                         text = "Ingresar",

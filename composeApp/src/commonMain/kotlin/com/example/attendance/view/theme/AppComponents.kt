@@ -5,16 +5,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,7 +23,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -82,29 +79,26 @@ fun AppTextField(
     modifier: Modifier = Modifier,
     singleLine: Boolean = true,
     leadingIcon: ImageVector? = null,
-    keyboardType: KeyboardType = KeyboardType.Text
+    keyboardType: KeyboardType = KeyboardType.Text,
+    isError: Boolean = false,
+    supportingText: String? = null,
 ) {
     val metrics = AttendanceThemeTokens.metrics
     val sizes = AttendanceThemeTokens.textSizes
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
     val scope = rememberCoroutineScope()
-    val interactionSource = remember { MutableInteractionSource() }
     val shape = RoundedCornerShape(16.dp)
     val colors = OutlinedTextFieldDefaults.colors(
-        focusedBorderColor = MaterialTheme.colorScheme.primary
+        focusedBorderColor = MaterialTheme.colorScheme.primary,
+        unfocusedBorderColor = MaterialTheme.colorScheme.outline,
+        errorBorderColor = MaterialTheme.colorScheme.error,
+        errorLabelColor = MaterialTheme.colorScheme.error,
+        errorLeadingIconColor = MaterialTheme.colorScheme.error,
     )
 
-    BasicTextField(
+    OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        singleLine = singleLine,
-        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-        textStyle = TextStyle(
-            fontSize = sizes.inputText,
-            lineHeight = sizes.inputText * 1.25f,
-            color = MaterialTheme.colorScheme.onSurface
-        ),
-        interactionSource = interactionSource,
         modifier = modifier
             .bringIntoViewRequester(bringIntoViewRequester)
             .onFocusChanged { state ->
@@ -114,38 +108,35 @@ fun AppTextField(
                         bringIntoViewRequester.bringIntoView()
                     }
                 }
+            },
+        label = { Text(text = label, style = TextStyle(fontSize = sizes.inputLabel)) },
+        leadingIcon = leadingIcon?.let { icon ->
+            {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
-            .height(metrics.inputMinHeight),
-        decorationBox = { innerTextField ->
-            OutlinedTextFieldDefaults.DecorationBox(
-                value = value,
-                innerTextField = innerTextField,
-                enabled = true,
-                singleLine = singleLine,
-                visualTransformation = VisualTransformation.None,
-                interactionSource = interactionSource,
-                label = { Text(text = label, style = TextStyle(fontSize = sizes.inputLabel)) },
-                leadingIcon = leadingIcon?.let { icon ->
-                    {
-                        Icon(
-                            imageVector = icon,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                },
-                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 4.dp),
-                colors = colors,
-                container = {
-                    OutlinedTextFieldDefaults.Container(
-                        enabled = true,
-                        isError = false,
-                        interactionSource = interactionSource,
-                        colors = colors,
-                        shape = shape
-                    )
-                }
-            )
-        }
+        },
+        supportingText = supportingText?.let { msg ->
+            {
+                Text(
+                    text = msg,
+                    color = MaterialTheme.colorScheme.error,
+                    style = TextStyle(fontSize = sizes.helperText),
+                )
+            }
+        },
+        isError = isError,
+        singleLine = singleLine,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        textStyle = TextStyle(
+            fontSize = sizes.inputText,
+            lineHeight = sizes.inputText * 1.25f,
+            color = MaterialTheme.colorScheme.onSurface
+        ),
+        shape = shape,
+        colors = colors,
     )
 }

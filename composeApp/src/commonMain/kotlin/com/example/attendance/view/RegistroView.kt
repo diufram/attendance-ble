@@ -34,14 +34,18 @@ interface RegistroView {
     val apellido: StateFlow<String>
     val carnet: StateFlow<String>
     val esDocente: StateFlow<Boolean>
-    val error: StateFlow<String>
+    val errorNombre: StateFlow<String>
+    val errorApellido: StateFlow<String>
+    val errorCarnet: StateFlow<String>
     val submitting: StateFlow<Boolean>
 
     fun onNombreChange(valor: String)
     fun onApellidoChange(valor: String)
     fun onCarnetChange(valor: String)
     fun onEsDocenteChange(valor: Boolean)
-    fun setError(valor: String)
+    fun setErrorNombre(valor: String)
+    fun setErrorApellido(valor: String)
+    fun setErrorCarnet(valor: String)
     fun setSubmitting(valor: Boolean)
 }
 
@@ -58,34 +62,47 @@ class RegistroViewData : RegistroView {
     private val _esDocente = MutableStateFlow(false)
     override val esDocente: StateFlow<Boolean> = _esDocente.asStateFlow()
 
-    private val _error = MutableStateFlow("")
-    override val error: StateFlow<String> = _error.asStateFlow()
+    private val _errorNombre = MutableStateFlow("")
+    override val errorNombre: StateFlow<String> = _errorNombre.asStateFlow()
+
+    private val _errorApellido = MutableStateFlow("")
+    override val errorApellido: StateFlow<String> = _errorApellido.asStateFlow()
+
+    private val _errorCarnet = MutableStateFlow("")
+    override val errorCarnet: StateFlow<String> = _errorCarnet.asStateFlow()
 
     private val _submitting = MutableStateFlow(false)
     override val submitting: StateFlow<Boolean> = _submitting.asStateFlow()
 
     override fun onNombreChange(valor: String) {
         _nombre.value = valor
-        _error.value = ""
+        _errorNombre.value = ""
     }
 
     override fun onApellidoChange(valor: String) {
         _apellido.value = valor
-        _error.value = ""
+        _errorApellido.value = ""
     }
 
     override fun onCarnetChange(valor: String) {
-        _carnet.value = valor.filter(Char::isDigit)
-        _error.value = ""
+        _carnet.value = valor
+        _errorCarnet.value = ""
     }
 
     override fun onEsDocenteChange(valor: Boolean) {
         _esDocente.value = valor
-        _error.value = ""
     }
 
-    override fun setError(valor: String) {
-        _error.value = valor
+    override fun setErrorNombre(valor: String) {
+        _errorNombre.value = valor
+    }
+
+    override fun setErrorApellido(valor: String) {
+        _errorApellido.value = valor
+    }
+
+    override fun setErrorCarnet(valor: String) {
+        _errorCarnet.value = valor
     }
 
     override fun setSubmitting(valor: Boolean) {
@@ -99,7 +116,9 @@ fun RegistroViewi(
     apellido: StateFlow<String>,
     carnet: StateFlow<String>,
     esDocente: StateFlow<Boolean>,
-    error: StateFlow<String>,
+    errorNombre: StateFlow<String>,
+    errorApellido: StateFlow<String>,
+    errorCarnet: StateFlow<String>,
     submitting: StateFlow<Boolean>,
     onRegistrar: () -> Unit,
     onVolver: () -> Unit,
@@ -107,10 +126,9 @@ fun RegistroViewi(
     onApellidoChange: (String) -> Unit,
     onCarnetChange: (String) -> Unit,
     onEsDocenteChange: (Boolean) -> Unit,
-    setError: (String) -> Unit,
     setSubmitting: (Boolean) -> Unit,
 
-) {
+    ) {
     val metrics = AttendanceThemeTokens.metrics
     val isDark = MaterialTheme.colorScheme.background.luminance() < 0.5f
     val cardContainer = if (isDark) {
@@ -128,7 +146,9 @@ fun RegistroViewi(
     val apellidoValue by apellido.collectAsState()
     val carnetValue by carnet.collectAsState()
     val esDocenteValue by esDocente.collectAsState()
-    val errorValue by error.collectAsState()
+    val errorNombreValue by errorNombre.collectAsState()
+    val errorApellidoValue by errorApellido.collectAsState()
+    val errorCarnetValue by errorCarnet.collectAsState()
     val submittingValue by submitting.collectAsState()
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -253,6 +273,8 @@ fun RegistroViewi(
                         onValueChange = onNombreChange,
                         label = "Nombre",
                         leadingIcon = Icons.Filled.Person,
+                        isError = errorNombreValue.isNotEmpty(),
+                        supportingText = errorNombreValue.takeIf { it.isNotEmpty() },
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -261,6 +283,8 @@ fun RegistroViewi(
                         onValueChange = onApellidoChange,
                         label = "Apellido",
                         leadingIcon = Icons.Filled.Person,
+                        isError = errorApellidoValue.isNotEmpty(),
+                        supportingText = errorApellidoValue.takeIf { it.isNotEmpty() },
                         modifier = Modifier.fillMaxWidth()
                     )
 
@@ -270,18 +294,10 @@ fun RegistroViewi(
                         label = "Carnet de Identidad",
                         leadingIcon = Icons.Filled.Badge,
                         keyboardType = KeyboardType.Number,
+                        isError = errorCarnetValue.isNotEmpty(),
+                        supportingText = errorCarnetValue.takeIf { it.isNotEmpty() },
                         modifier = Modifier.fillMaxWidth()
                     )
-
-                    if (errorValue.isNotEmpty()) {
-                        Text(
-                            text = errorValue,
-                            color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
 
                     AppPrimaryButton(
                         text = "Registrarse",

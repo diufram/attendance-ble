@@ -181,13 +181,14 @@ fun App(db: Database) {
                     apellido = registroView.apellido,
                     carnet = registroView.carnet,
                     esDocente = registroView.esDocente,
-                    error = registroView.error,
+                    errorNombre = registroView.errorNombre,
+                    errorApellido = registroView.errorApellido,
+                    errorCarnet = registroView.errorCarnet,
                     submitting = registroView.submitting,
                     onNombreChange = registroView::onNombreChange,
                     onApellidoChange = registroView::onApellidoChange,
                     onCarnetChange = registroView::onCarnetChange,
                     onEsDocenteChange = registroView::onEsDocenteChange,
-                    setError = registroView::setError,
                     setSubmitting = registroView::setSubmitting,
                     onRegistrar = {
                         val resultado = authController.onRegistrar() ?: return@RegistroViewi
