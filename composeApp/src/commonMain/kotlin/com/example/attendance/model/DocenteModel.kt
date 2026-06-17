@@ -1,6 +1,7 @@
 package com.example.attendance.model
 
 import com.example.attendance.db.Database
+import com.example.attendance.proxy.DocenteSubject
 
 class DocenteModel(
     val id: Long = 0,
@@ -8,10 +9,10 @@ class DocenteModel(
     val apellido: String = "",
     val carnetIdentidad: Long = 0,
     private val db: Database? = null
-) {
+) : DocenteSubject {
     private fun requireDb(): Database = db ?: error("DocenteModel sin db")
 
-    fun crear(docente: DocenteModel): Long {
+    override fun crear(docente: DocenteModel): Long {
         val database = requireDb()
         database.docenteQueries.insertDocente(
             carnet_identidad = docente.carnetIdentidad,
@@ -21,7 +22,7 @@ class DocenteModel(
         return database.docenteQueries.getLastInsertId().executeAsOne()
     }
 
-    fun obtenerPorCarnet(carnet: Long): DocenteModel? {
+    override fun obtenerPorCarnet(carnet: Long): DocenteModel? {
         val database = requireDb()
         return database.docenteQueries.getDocenteByCarnet(carnet)
             .executeAsOneOrNull()

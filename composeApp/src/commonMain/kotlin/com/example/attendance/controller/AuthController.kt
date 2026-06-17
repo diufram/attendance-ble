@@ -2,6 +2,8 @@ package com.example.attendance.controller
 
 import com.example.attendance.model.DocenteModel
 import com.example.attendance.model.EstudianteModel
+import com.example.attendance.proxy.DocenteModelProxy
+import com.example.attendance.proxy.EstudianteModelProxy
 import com.example.attendance.validador.ApellidoValidador
 import com.example.attendance.validador.CarnetValidador
 import com.example.attendance.validador.NombreValidador
@@ -28,14 +30,17 @@ class AuthController(
 
         val carnet = loginView.carnet.value
         val carnetLong = carnet.toLong()
-        val docente = docenteModel.obtenerPorCarnet(carnetLong)
+        val docenteProxy = DocenteModelProxy(docenteModel)
+        val estudianteProxy = EstudianteModelProxy(estudianteModel)
+
+        val docente = docenteProxy.obtenerPorCarnet(carnetLong)
         if (docente != null) {
             loginView.setError("")
             loginView.setSubmitting(false)
             return "DOCENTE:$carnetLong"
         }
 
-        val estudiante = estudianteModel.obtenerPorCarnet(carnetLong)
+        val estudiante = estudianteProxy.obtenerPorCarnet(carnetLong)
         if (estudiante != null) {
             loginView.setError("")
             loginView.setSubmitting(false)
@@ -77,42 +82,38 @@ class AuthController(
         val carnetLong = carnet.toLong()
         val nombreTrim = nombre.trim()
         val apellidoTrim = apellido.trim()
+        val docenteProxy = DocenteModelProxy(docenteModel)
+        val estudianteProxy = EstudianteModelProxy(estudianteModel)
 
         if (esDocente) {
-            docenteModel.obtenerPorCarnet(carnetLong) ?: run {
-                docenteModel.crear(
-                    DocenteModel(
-                        carnetIdentidad = carnetLong,
-                        nombre = nombreTrim,
-                        apellido = apellidoTrim
-                    )
-                )
-                docenteModel.obtenerPorCarnet(carnetLong)
-                    ?: run {
-                        registroView.setErrorCarnet("No se pudo registrar el docente")
-                        registroView.setSubmitting(false)
-                        return null
-                    }
-            }
+            val docente = DocenteModel(
+                carnetIdentidad = carnetLong,
+                nombre = nombreTrim,
+                apellido = apellidoTrim
+            )
+            docenteProxy.crear(docente)
+            docenteProxy.obtenerPorCarnet(carnetLong)
+                ?: run {
+                    registroView.setErrorCarnet("No se pudo registrar el docente")
+                    registroView.setSubmitting(false)
+                    return null
+                }
 
             registroView.setErrorCarnet("")
             return "DOCENTE:$carnetLong"
         } else {
-            estudianteModel.obtenerPorCarnet(carnetLong) ?: run {
-                estudianteModel.crear(
-                    EstudianteModel(
-                        carnetIdentidad = carnetLong,
-                        nombre = nombreTrim,
-                        apellido = apellidoTrim
-                    )
-                )
-                estudianteModel.obtenerPorCarnet(carnetLong)
-                    ?: run {
-                        registroView.setErrorCarnet("No se pudo registrar el estudiante")
-                        registroView.setSubmitting(false)
-                        return null
-                    }
-            }
+            val estudiante = EstudianteModel(
+                carnetIdentidad = carnetLong,
+                nombre = nombreTrim,
+                apellido = apellidoTrim
+            )
+            estudianteProxy.crear(estudiante)
+            estudianteProxy.obtenerPorCarnet(carnetLong)
+                ?: run {
+                    registroView.setErrorCarnet("No se pudo registrar el estudiante")
+                    registroView.setSubmitting(false)
+                    return null
+                }
 
             registroView.setErrorCarnet("")
             return "ESTUDIANTE:$carnetLong"
